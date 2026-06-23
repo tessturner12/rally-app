@@ -1,0 +1,98 @@
+Rally — Plain-English Build Plan                                                                                                                           │
+│                                                                                                                                                            │
+│ Context                                                                                                                                                    │
+│                                                                                                                                                            │
+│ rally-app currently has only a spec (CLAUDE.md) and a status tracker (PROGRESS.md) — no code has been written yet. Before scaffolding starts, you (the owner, not a developer) asked for a description of how the build will unfold: the stages, what tech is used at each step, what you'll actually be able to see/test, and what could go wrong. This document is that walkthrough, in plain language, based on the existing spec in CLAUDE.md.                          │
+│                                                                                                                                                            │
+│ Nothing here changes the spec — it's a narrative version of d, for your own understanding and to sanity-check before work     │starts.                                                                                                                                                                                                                                                                               │
+│ ---                                                                                                                                                     The shape of the app, in one paragraph                                                                                        │
+│                                                                                                                                                         Someone creates a "Rally," shares a link with up to 3 friendey're starting from (a postcode or a tube station/area name), and │ the app works out the tube station that gives everyone the fairest journey — not the geographic middle, but the place where the longest journey for any one person is as short as possible. It then shows nearby pub station.                                                         │
+│                                                                                                                                                       ---                                                                                                                           │
+│ Stage 1 — The skeleton (scaffolding)                                                                                                                                                                                                                                                │
+│ What happens: Set up the basic Next.js project — the folders, the styling system, and a blank deployment on Vercel so there's a live URL from day one (even if it just says "Hello").                                                                                               │
+│                                                                                                                                                            │
+│ Tech stack: Next.js (the web framework), TypeScript (a strict catches mistakes early), Tailwind CSS (styling), Vercel         │(hosting).                                                                                                                                                 │
+│                                                                                                                               │
+│ Outcome you'll see: A live, empty website at a Vercel URL. Nothing functional yet, but it proves the foundation works and is deployed.                     │
+│                                                                                                                               │
+│ Challenges: Low risk — this is routine setup. The only real decision is whether to point a custom domain (joinrally.place) at it now or later.             │
+│                                                                                                                               │
+│ ---                                                                                                                                                        │
+│ Stage 2 — Turning words into map coordinates (geocoding)                                                                      │
+│                                                                                                                                                            │
+│ What happens: Build the logic that takes what someone types d turns it into a precise latitude/longitude. Postcodes go        │through one service (Postcodes.io), station/area names go through another (TfL's StopPoint Search), decided automatically by checking if the text looks    │
+│ like a postcode.                                                                                                              │
+│                                                                                                                                                            │
+│ Tech stack: Postcodes.io (free postcode lookup), TfL StopPoiame lookup), a small piece of custom logic to decide which one to │ use.                                                                                                                                                       │
+│                                                                                                                               │
+│ Outcome you'll see: Nothing visual yet — this is tested behind the scenes (e.g. feeding in "Clapham North" and confirming it returns the right             │
+│ coordinates).                                                                                                                 │
+│                                                                                                                                                            │
+│ Challenges: Ambiguous input is the main risk — "Victoria" corea, and typos/partial names need sensible fallback behaviour (a  │clear error rather than a crash) rather than silently guessing wrong.                                                                                      │
+│                                                                                                                               │
+│ ---                                                                                                                                                        │
+│ Stage 3 — Getting real journey times (the risky core)                                                                         │
+│                                                                                                                                                            │
+│ What happens: For every candidate meeting station (~30 acrosJourney Planner "how long would it take to get here from this     │person's location?" This is repeated for every person × every candidate, so the spec calls for two safeguards: caching results so the same journey isn't   │
+│ queried twice, and limiting how many requests fire at once ('s API doesn't get overwhelmed or time out.                       │
+│                                                                                                                                                            │
+│ Tech stack: TfL Journey Planner API, Vercel KV (a fast cachey times for 6 hours so repeat queries are instant).               │
+│                                                                                                                                                            │
+│ Outcome you'll see: Still behind-the-scenes, but this is theags as the one to prove works before building any screens — if    │TfL's data doesn't behave as expected, it changes everything downstream.                                                                                   │
+│                                                                                                                               │
+│ Challenges: This is the highest-risk stage. TfL's API is slow (1–2 seconds per call) and rate-limited, so with 4 people × 30 stations that's up to 120     │
+│ calls — without batching and caching, this would be slow or  chance some journeys simply have no good TfL route; the app      │needs to skip those candidates gracefully rather than breaking.                                                                                            │
+│                                                                                                                               │
+│ ---                                                                                                                                                        │
+│ Stage 4 — The fairness algorithm                                                                                              │
+│                                                                                                                                                            │
+│ What happens: With everyone's journey time to every candidatge just does the maths: for each candidate, find the longest      │journey anyone would have, then pick the candidate where that longest journey is the shortest (this is what "minimax" means — minimize the maximum).       │
+│                                                                                                                               │
+│ Tech stack: Plain TypeScript — no external services, pure logic.                                                                                           │
+│                                                                                                                               │
+│ Outcome you'll see: Still behind-the-scenes, but testable directly — feed in known journey times, confirm the "winning" station matches what you'd expect  │
+│ by hand.                                                                                                                      │
+│                                                                                                                                                            │
+│ Challenges: Low risk on its own since it's simple logic, but's data — any gaps there (missing journeys, wrong coordinates)    │surface as wrong-looking results here.                                                                                                                     │
+│                                                                                                                               │
+│ ---                                                                                                                                                        │
+│ Stage 5 — Wiring it together (API routes)                                                                                     │
+│                                                                                                                                                            │
+│ What happens: Build the handful of behind-the-scenes endpoina session, add a person's location, trigger the calculation,      │fetch nearby venues. This is the plumbing that connects what a user does on screen to the logic built in Stages 2–4.                                       │
+│                                                                                                                               │
+│ Tech stack: Next.js API routes, Vercel KV (storing session data for 24 hours), Google Places Nearby API (with its own 12-hour cache, same reasoning as     │
+│ Stage 3 — slow and costs money at scale).                                                                                     │
+│                                                                                                                                                            │
+│ Outcome you'll see: You can start testing real flows with to — create a session, get an ID back, add locations, trigger a     │calculation, get a real result back as raw data (not yet styled).                                                                                          │
+│                                                                                                                               │
+│ Challenges: Keeping API keys (TfL, Google) secure server-side — never exposed to the browser — and handling the case where a session has expired or        │
+│ doesn't exist.                                                                                                                │
+│                                                                                                                                                            │
+│ ---                                                                                                                           │
+│ Stage 6 — The screens people actually use                                                                                                                  │
+│                                                                                                                               │
+│ What happens: Build the three actual pages: the homepage (one button), the session page (everyone adds their location, share link, "Find Rally Point"      │
+│ button), and the results page (winning station, map, journey                                                                  │
+│                                                                                                                                                            │
+│ Tech stack: React components, Tailwind CSS, Google Maps JS +splay and location input).                                        │
+│                                                                                                                                                            │
+│ Outcome you'll see: The full real product — you can share a ryone types in where they are, and you get a real result on your  │phone.                                                                                                                                                     │
+│                                                                                                                               │
+│ Challenges: The calculation takes 5–15 seconds (all those TfL calls from Stage 3), so the loading state needs to feel intentional rather than broken.      │
+│ Everything also has to work well on a phone screen down to 3ost people will actually use it in a group chat.                  │
+│                                                                                                                                                            │
+│ ---                                                                                                                           │
+│ After Stage 6                                                                                                                                              │
+│                                                                                                                               │
+│ Polish, real-world testing with actual friend groups, and fixing whatever breaks in practice — plus deciding on the visual style (palette/accent colour is │
+│ still marked TBD in the spec). Phase 2 ideas (group sessionsoups, other cities) are explicitly parked — not part of this      │build.                                                                                                                                                     │
+│                                                                                                                               │
+│ ---                                                                                                                                                        │
+│ How you'll know it's working, stage by stage                                                                                  │
+│                                                                                                                                                            │
+│ - Stage 1: visiting the Vercel URL loads a page                                                                               │
+│ - Stage 2: a test input ("Brixton" or a postcode) returns correct coordinates                                                                              │
+│ - Stage 3: a known journey (e.g. two real postcodes) returnspeated requests come back instantly (cache hit)                   │
+│ - Stage 4: feeding in sample journey times by hand returns the station you'd expect                                                                        │
+│ - Stage 5: hitting the API routes directly returns sensible                                                                   │
+│ - Stage 6: the real end-to-end flow works in a browser on a phone-sized screen, start to finish
