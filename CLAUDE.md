@@ -1,7 +1,9 @@
 # Rally — CLAUDE.md
 
 ## About this project
-Rally is a web app that helps groups of friends in London find a fair place to meet, based on real public transport journey times — not a geographic midpoint. Domain: joinrally.place.
+Rally is a web app that finds a fair place to meet in London, based on real public transport journey times — not a geographic midpoint. Domain: joinrally.place.
+
+**v1 is solo-first.** One person types in up to 6 locations themselves (their own and their friends') on a single screen — no one else needs to join. A share link is available if they want someone else to add or check a location, but it's optional, not the primary flow. The real-time "everyone joins separately" collaborative version is Phase 2.
 
 **About the owner:** Data analyst, not a developer. Always explain what you're doing, flag decisions that need input, and build the simplest working version first before adding complexity.
 
@@ -28,7 +30,7 @@ Rally is a web app that helps groups of friends in London find a fair place to m
 
 **Do NOT use geographic midpoint (averaging lat/lng). Always use real TfL journey times.**
 
-1. Take up to 4 inputs — each one is either a UK postcode or a tube/area/station name
+1. Take up to 6 inputs — each one is either a UK postcode or a tube/area/station name
 2. Decide which geocoder to use per input:
    - If it matches a UK postcode format (regex), use Postcodes.io
    - Otherwise, treat it as a station/area name and use the TfL StopPoint Search API
@@ -62,7 +64,7 @@ Rally is a web app that helps groups of friends in London find a fair place to m
 - Calls are slow (1–2s each) and rate-limited — **always check Vercel KV cache first**
 - Cache key: `tfl:{fromLat},{fromLng}:{toLat},{toLng}` — TTL 6 hours
 - If TfL returns no results for a journey, skip that candidate — don't crash
-- **Batch calls with a concurrency limit of 10.** With 4 people × ~30 candidate stations that's up to 120 calls per session — never fire them all at once. Use a concurrency limiter (e.g. `p-limit`) around the journey time calls.
+- **Batch calls with a concurrency limit of 10.** With up to 6 people × ~30 candidate stations that's up to 180 calls per session — never fire them all at once. Use a concurrency limiter (e.g. `p-limit`) around the journey time calls.
 
 ---
 
@@ -111,8 +113,8 @@ Sessions expire after 24 hours. Structure is designed to support Phase 2 group f
 
 ## Phase 1 MVP — build only this
 
-- **Screen 1 (Home):** one-sentence explanation + "Find somewhere to meet" button → creates session, redirects
-- **Screen 2 (Session `/session/[id]`):** share link with copy button, up to 4 location inputs (postcode or tube station, Google Autocomplete), optional name per person, "Find Rally Point" button (enabled at 2+ locations), loading state
+- **Screen 1 (Home):** one-sentence explanation + "Find somewhere to meet" button → creates session, redirects. Copy leads with "type in where everyone's coming from" — not "invite your group."
+- **Screen 2 (Session `/session/[id]`):** up to 6 location inputs (postcode or tube station, Google Autocomplete), optional name per person, "Find Rally Point" button (enabled at 2+ locations), loading state. Share link with copy button is present but secondary — framed as "share if you want someone else to add their own spot," not a required step.
 - **Screen 3 (Results `/session/[id]/results`):** winning station, "longest journey is X mins", per-person journey times, Google Map with marker, venue cards (name, type, rating), "Start over" button
 
 **Do NOT build in Phase 1:** accounts/login, venue voting, persistent groups, multi-city support.
