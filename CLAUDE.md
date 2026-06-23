@@ -7,6 +7,10 @@ Rally is a web app that finds a fair place to meet in London, based on real publ
 
 **About the owner:** Data analyst, not a developer. Always explain what you're doing, flag decisions that need input, and build the simplest working version first before adding complexity.
 
+**Code comments:** Comment generously, in plain English, like explaining the code to someone reading it for the first time who isn't a developer. Explain *what* a block does and *why*, not just terse dev shorthand — this overrides the usual "minimal comments" default, specifically for this project.
+
+**Commit messages:** Do not add a `Co-Authored-By: Claude` trailer to commits in this repo.
+
 ---
 
 ## Tech stack
