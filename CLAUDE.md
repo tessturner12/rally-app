@@ -28,8 +28,10 @@ Rally is a web app that helps groups of friends in London find a fair place to m
 
 **Do NOT use geographic midpoint (averaging lat/lng). Always use real TfL journey times.**
 
-1. Take up to 4 postcodes or tube station names
-2. Geocode UK postcodes via Postcodes.io (free, no key) — always use this before Google for postcodes
+1. Take up to 4 inputs — each one is either a UK postcode or a tube/area/station name
+2. Decide which geocoder to use per input:
+   - If it matches a UK postcode format (regex), use Postcodes.io
+   - Otherwise, treat it as a station/area name and use the TfL StopPoint Search API
 3. Query TfL Journey Planner API for journey time from each person to each candidate station
 4. For each candidate: find the **maximum** journey time across all participants
 5. Pick the candidate with the **lowest maximum** — minimax algorithm
@@ -42,17 +44,25 @@ Rally is a web app that helps groups of friends in London find a fair place to m
 | API | Key env var | Purpose |
 |-----|-------------|---------|
 | Postcodes.io | none (free) | UK postcode → lat/lng. Use this first, not Google Geocoding |
+| TfL StopPoint Search | `TFL_API_KEY` | Station/area name → lat/lng. Use this when input isn't a postcode |
 | TfL Journey Planner | `TFL_API_KEY` | Real journey times — server-side only |
 | Google Places Nearby | `GOOGLE_MAPS_API_KEY` | Venue suggestions — server-side only |
 | Google Maps JS + Autocomplete | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Client-side map display and input autocomplete only |
 
-### TfL API
+### TfL StopPoint Search (name → coordinates)
+- Endpoint: `https://api.tfl.gov.uk/StopPoint/Search/{name}?modes=tube&app_key={key}`
+- Use whenever an input doesn't match a UK postcode regex — covers tube stations, areas, and neighbourhoods (e.g. "Brixton", "Hackney Central")
+- Take the top match's `lat`/`lon`
+- If no match is found, return a validation error to the user — don't crash
+
+### TfL Journey Planner (journey time)
 - Endpoint: `https://api.tfl.gov.uk/Journey/JourneyResults/{from}/to/{to}?app_key={key}`
 - `{from}` and `{to}` are `lat,lng` (e.g. `51.5074,-0.1278`)
 - Use `journeys[0].duration` (minutes)
 - Calls are slow (1–2s each) and rate-limited — **always check Vercel KV cache first**
 - Cache key: `tfl:{fromLat},{fromLng}:{toLat},{toLng}` — TTL 6 hours
 - If TfL returns no results for a journey, skip that candidate — don't crash
+- **Batch calls with a concurrency limit of 10.** With 4 people × ~30 candidate stations that's up to 120 calls per session — never fire them all at once. Use a concurrency limiter (e.g. `p-limit`) around the journey time calls.
 
 ---
 
@@ -60,6 +70,7 @@ Rally is a web app that helps groups of friends in London find a fair place to m
 
 - **Never expose API keys to the client.** TfL and Google Places calls must stay in `/app/api` routes. Only `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is allowed client-side.
 - **Always cache TfL calls** in Vercel KV before making them. This is the expensive/slow part.
+- **Cache Google Places Nearby results too.** Key: `venues:{lat},{lng}:{radius}` — TTL 12 hours. These calls are slow and cost money at scale, same as TfL.
 - **Mobile-first.** Most users are on phones in a group chat. Design for 375px minimum.
 - The loading state during calculation takes 5–15 seconds — make it feel intentional, not broken.
 
@@ -83,7 +94,7 @@ type Session = {
   createdAt: number
   locations: Array<{
     name: string
-    postcode: string
+    input: string        // raw user input — postcode or station/area name
     lat: number
     lng: number
   }>
@@ -119,10 +130,11 @@ Sessions expire after 24 hours. Structure is designed to support Phase 2 group f
 ## Build order
 1. Scaffold Next.js + TypeScript + Tailwind, set up folder structure
 2. `/lib/candidates.ts` — hardcoded station list with lat/lng (zones 1–3, ~30 stations)
-3. `/lib/tfl.ts` — `getJourneyTime(fromLat, fromLng, toLat, toLng): Promise<number>` — get this working and tested first
-4. `/lib/algorithm.ts` — `findBestStation(locations: LatLng[]): Promise<StationResult>` — minimax logic
-5. API routes
-6. UI screens
+3. `/lib/geocode.ts` — `resolveLocation(input: string): Promise<LatLng>` — postcode regex check, then Postcodes.io or TfL StopPoint Search
+4. `/lib/tfl.ts` — `getJourneyTime(fromLat, fromLng, toLat, toLng): Promise<number>` — get this working and tested first, including the concurrency limiter
+5. `/lib/algorithm.ts` — `findBestStation(locations: LatLng[]): Promise<StationResult>` — minimax logic
+6. API routes
+7. UI screens
 
 **Validate TfL integration before building UI. That is the core risk.**
 
