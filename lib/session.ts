@@ -1,0 +1,94 @@
+// A "session" is one Rally search - the set of locations someone has typed in,
+// and (once calculated) the winning station and journey times. This file is
+// the only place that reads or writes session data in Redis, so the API
+// routes never have to think about cache keys or expiry themselves.
+
+import { redis } from './kv'
+
+export type LocationInput = {
+  name: string
+  input: string
+  lat: number
+  lng: number
+}
+
+export type SessionResults = {
+  winningStation: { name: string; lat: number; lng: number; maxJourneyTime: number }
+  journeyTimes: Array<{ personName: string; minutes: number }>
+  venues: Array<{ name: string; type: string; rating: number; address: string; lat: number; lng: number }>
+}
+
+export type Session = {
+  id: string
+  createdAt: number
+  locations: LocationInput[]
+  results?: SessionResults
+}
+
+// Thrown when an id doesn't match any session - either it was never created,
+// or it has expired (sessions only live for 24 hours). Callers (the API
+// routes) should turn this into a 404, not a crash.
+export class SessionNotFoundError extends Error {
+  constructor(id: string) {
+    super(`No session found for id "${id}"`)
+    this.name = 'SessionNotFoundError'
+  }
+}
+
+// Thrown when someone tries to add a 7th location to a session. The spec
+// caps Rally at 6 people per search.
+export class LocationLimitError extends Error {
+  constructor() {
+    super(`A session can have at most ${MAX_LOCATIONS} locations`)
+    this.name = 'LocationLimitError'
+  }
+}
+
+const MAX_LOCATIONS = 6
+const SESSION_TTL_SECONDS = 24 * 60 * 60
+
+function sessionKey(id: string): string {
+  return `session:${id}`
+}
+
+async function save(session: Session): Promise<Session> {
+  await redis.set(sessionKey(session.id), session, { ex: SESSION_TTL_SECONDS })
+  return session
+}
+
+export async function createSession(): Promise<Session> {
+  const session: Session = {
+    id: crypto.randomUUID(),
+    createdAt: Date.now(),
+    locations: [],
+  }
+  return save(session)
+}
+
+export async function getSession(id: string): Promise<Session | null> {
+  const session = await redis.get<Session>(sessionKey(id))
+  return session ?? null
+}
+
+export async function addLocation(id: string, location: LocationInput): Promise<Session> {
+  const session = await getSession(id)
+  if (!session) {
+    throw new SessionNotFoundError(id)
+  }
+  if (session.locations.length >= MAX_LOCATIONS) {
+    throw new LocationLimitError()
+  }
+
+  session.locations.push(location)
+  return save(session)
+}
+
+export async function saveResults(id: string, results: SessionResults): Promise<Session> {
+  const session = await getSession(id)
+  if (!session) {
+    throw new SessionNotFoundError(id)
+  }
+
+  session.results = results
+  return save(session)
+}
