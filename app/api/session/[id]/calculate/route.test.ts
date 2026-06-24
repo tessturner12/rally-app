@@ -16,6 +16,11 @@ vi.mock('@/lib/algorithm', () => ({
   NoViableStationError,
 }))
 
+const getNearbyVenuesMock = vi.fn()
+vi.mock('@/lib/venues', () => ({
+  getNearbyVenues: (...args: unknown[]) => getNearbyVenuesMock(...args),
+}))
+
 const { POST } = await import('./route')
 
 function ctx(id: string) {
@@ -26,6 +31,8 @@ beforeEach(() => {
   getSessionMock.mockReset()
   saveResultsMock.mockReset()
   findBestStationMock.mockReset()
+  getNearbyVenuesMock.mockReset()
+  getNearbyVenuesMock.mockResolvedValue([])
 })
 
 const twoLocations = [
@@ -34,23 +41,43 @@ const twoLocations = [
 ]
 
 describe('POST /api/session/[id]/calculate', () => {
-  test('runs the algorithm over the session locations and saves the results', async () => {
+  test('runs the algorithm over the session locations, fetches venues for the winning station, and saves the results', async () => {
     getSessionMock.mockResolvedValue({ id: 'abc123', createdAt: 1, locations: twoLocations })
     const stationResult = {
       winningStation: { name: 'Bank', lat: 5, lng: 6, maxJourneyTime: 20 },
       journeyTimes: [{ personName: 'Alex', minutes: 20 }, { personName: 'Sam', minutes: 15 }],
     }
     findBestStationMock.mockResolvedValue(stationResult)
-    const savedSession = { id: 'abc123', createdAt: 1, locations: twoLocations, results: { ...stationResult, venues: [] } }
+    const venues = [{ name: 'A Pub', type: 'bar', rating: 4.5, address: '1 St', lat: 5, lng: 6 }]
+    getNearbyVenuesMock.mockResolvedValue(venues)
+    const savedSession = { id: 'abc123', createdAt: 1, locations: twoLocations, results: { ...stationResult, venues } }
     saveResultsMock.mockResolvedValue(savedSession)
 
     const response = await POST(new Request('http://localhost/x', { method: 'POST' }), ctx('abc123'))
     const body = await response.json()
 
     expect(findBestStationMock).toHaveBeenCalledWith(twoLocations)
-    expect(saveResultsMock).toHaveBeenCalledWith('abc123', { ...stationResult, venues: [] })
+    expect(getNearbyVenuesMock).toHaveBeenCalledWith(5, 6)
+    expect(saveResultsMock).toHaveBeenCalledWith('abc123', { ...stationResult, venues })
     expect(response.status).toBe(200)
     expect(body).toEqual(savedSession)
+  })
+
+  test('still saves results with an empty venues list if the venues lookup fails', async () => {
+    getSessionMock.mockResolvedValue({ id: 'abc123', createdAt: 1, locations: twoLocations })
+    const stationResult = {
+      winningStation: { name: 'Bank', lat: 5, lng: 6, maxJourneyTime: 20 },
+      journeyTimes: [{ personName: 'Alex', minutes: 20 }, { personName: 'Sam', minutes: 15 }],
+    }
+    findBestStationMock.mockResolvedValue(stationResult)
+    getNearbyVenuesMock.mockRejectedValue(new Error('Google Places is down'))
+    const savedSession = { id: 'abc123', createdAt: 1, locations: twoLocations, results: { ...stationResult, venues: [] } }
+    saveResultsMock.mockResolvedValue(savedSession)
+
+    const response = await POST(new Request('http://localhost/x', { method: 'POST' }), ctx('abc123'))
+
+    expect(response.status).toBe(200)
+    expect(saveResultsMock).toHaveBeenCalledWith('abc123', { ...stationResult, venues: [] })
   })
 
   test('returns 404 when the session does not exist', async () => {

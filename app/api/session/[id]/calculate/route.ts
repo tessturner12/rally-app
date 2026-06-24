@@ -3,12 +3,10 @@
 // been added so far, then saves the result onto the session so the results
 // page can read it back.
 //
-// Venue suggestions aren't wired up yet - that needs a Google Places API key
-// we don't have, so results are saved with an empty venues list for now.
-
 import { NextResponse } from 'next/server'
 import { getSession, saveResults, SessionNotFoundError } from '@/lib/session'
 import { findBestStation, NoViableStationError } from '@/lib/algorithm'
+import { getNearbyVenues } from '@/lib/venues'
 
 export async function POST(
   _request: Request,
@@ -30,7 +28,18 @@ export async function POST(
 
   try {
     const { winningStation, journeyTimes } = await findBestStation(session.locations)
-    const updated = await saveResults(id, { winningStation, journeyTimes, venues: [] })
+
+    // Venue suggestions are a nice-to-have on top of the core result - if
+    // Google Places has a bad day, that shouldn't stop someone getting their
+    // Rally point, so a failure here just means an empty venue list.
+    let venues: Awaited<ReturnType<typeof getNearbyVenues>> = []
+    try {
+      venues = await getNearbyVenues(winningStation.lat, winningStation.lng)
+    } catch {
+      venues = []
+    }
+
+    const updated = await saveResults(id, { winningStation, journeyTimes, venues })
     return NextResponse.json(updated, { status: 200 })
   } catch (error) {
     if (error instanceof NoViableStationError) {
