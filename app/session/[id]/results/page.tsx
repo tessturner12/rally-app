@@ -16,6 +16,7 @@ export default function ResultsPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     fetch(`/api/session/${id}`)
@@ -36,13 +37,30 @@ export default function ResultsPage() {
       });
   }, [id]);
 
+  // Uses the Web Share API on phones (native share sheet), falls back to
+  // clipboard copy on desktop browsers that don't support it.
+  async function handleShare() {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Here's where we should meet — Rally", url });
+      } catch {
+        // User dismissed the share sheet — not an error worth surfacing
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  }
+
   if (notFound) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
         <p className="text-lg text-zinc-700">
           This Rally has expired or doesn&apos;t exist.
         </p>
-        <Link href="/" className="font-medium text-rose-600 underline">
+        <Link href="/" className="font-medium text-blue-800 underline">
           Start a new one
         </Link>
       </main>
@@ -65,7 +83,7 @@ export default function ResultsPage() {
         </p>
         <Link
           href={`/session/${id}`}
-          className="font-medium text-rose-600 underline"
+          className="font-medium text-blue-800 underline"
         >
           Add locations and calculate
         </Link>
@@ -78,8 +96,15 @@ export default function ResultsPage() {
 
   return (
     <main className="flex flex-1 flex-col gap-8 px-6 py-10">
-      <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-2xl font-bold text-rose-600">Suggested Meeting Points</h1>
+      <div className="flex flex-col gap-2 text-center">
+        <h1 className="text-2xl font-bold text-blue-800">Suggested Meeting Points</h1>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="mx-auto rounded-full border border-blue-800 px-4 py-1.5 text-sm font-medium text-blue-800"
+        >
+          {linkCopied ? "Link copied!" : "Share these results"}
+        </button>
       </div>
 
       <MeetingAreaMap

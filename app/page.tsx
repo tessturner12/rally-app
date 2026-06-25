@@ -94,7 +94,7 @@ export default function Home() {
       {/* Hero — the first thing someone sees. One clear action. */}
       <section className="flex flex-col items-center gap-6 px-6 py-16 text-center">
         <div className="flex flex-col gap-2">
-          <h1 className="text-5xl font-bold tracking-tight text-rose-600">
+          <h1 className="text-5xl font-bold tracking-tight text-blue-800">
             Rally
           </h1>
           <p className="text-lg font-medium text-zinc-500">Find the fair spot</p>
@@ -108,7 +108,7 @@ export default function Home() {
           type="button"
           onClick={handleStart}
           disabled={isStarting}
-          className="w-full max-w-xs rounded-full bg-rose-600 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
+          className="w-full max-w-xs rounded-full bg-blue-800 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-blue-300"
         >
           {isStarting ? "Starting..." : "Find somewhere to meet"}
         </button>
@@ -121,7 +121,7 @@ export default function Home() {
         <ol className="flex flex-col gap-6">
           {HOW_IT_WORKS.map((step, i) => (
             <li key={i} className="flex gap-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-600 text-sm font-bold text-white">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-800 text-sm font-bold text-white">
                 {i + 1}
               </span>
               <div className="flex flex-col gap-1">
@@ -142,7 +142,7 @@ export default function Home() {
             Example only
           </span>
         </div>
-        <div className="rounded-xl border-2 border-rose-600 p-4">
+        <div className="rounded-xl border-2 border-blue-800 p-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-zinc-900">Oxford Circus</h3>
             <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
@@ -165,9 +165,9 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className="mt-3 rounded-lg bg-rose-50 px-4 py-3 text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-rose-500">Avg. journey time</p>
-            <p className="text-2xl font-bold text-rose-700">24 mins</p>
+          <div className="mt-3 rounded-lg bg-blue-50 px-4 py-3 text-center">
+            <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Avg. journey time</p>
+            <p className="text-2xl font-bold text-blue-900">24 mins</p>
           </div>
           <div className="mt-3 border-t border-zinc-200 pt-3 text-sm text-zinc-600">
             <span>Longest journey: 26 mins</span>

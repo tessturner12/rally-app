@@ -14,6 +14,12 @@ type StationCardProps = {
   timePreference?: { timeIs: "arriving" | "departing"; time: string };
 };
 
+// TfL sometimes returns street names and instruction text in ALL CAPS.
+// This converts them to Title Case so they read naturally in the journey list.
+function toTitleCase(str: string): string {
+  return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // One ranked meeting-point option: the station name, each person's
 // step-by-step journey (coloured by TfL line, with a per-person map on
 // tap), the spread between the luckiest and unluckiest journey, and an
@@ -57,7 +63,7 @@ export default function StationCard({
     <div
       onClick={onSelect}
       className={`flex flex-col gap-4 rounded-xl border-2 p-4 ${
-        isSelected ? "border-rose-600" : "border-zinc-200"
+        isSelected ? "border-blue-800" : "border-zinc-200"
       }`}
     >
       <div className="flex items-center justify-between">
@@ -83,7 +89,7 @@ export default function StationCard({
                     style={{ backgroundColor: colourForLine(leg.lineName, leg.mode) }}
                   />
                   <span>
-                    {leg.instruction} ({leg.durationMinutes} min
+                    {toTitleCase(leg.instruction)} ({leg.durationMinutes} min
                     {leg.stops !== undefined ? `, ${leg.stops} stops` : ""})
                   </span>
                 </li>
@@ -99,7 +105,7 @@ export default function StationCard({
                   event.stopPropagation();
                   setMapForPersonIndex(index);
                 }}
-                className="rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white"
+                className="rounded-full bg-blue-800 px-3 py-1 text-xs font-semibold text-white"
               >
                 Show map
               </button>
@@ -109,9 +115,9 @@ export default function StationCard({
       </div>
 
       {/* Prominent average time badge sits above the footer stat row */}
-      <div className="rounded-lg bg-rose-50 px-4 py-3 text-center">
-        <p className="text-xs font-medium uppercase tracking-wide text-rose-500">Avg. journey time</p>
-        <p className="text-2xl font-bold text-rose-700">{station.averageTime} mins</p>
+      <div className="rounded-lg bg-blue-50 px-4 py-3 text-center">
+        <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Avg. journey time</p>
+        <p className="text-2xl font-bold text-blue-900">{station.averageTime} mins</p>
       </div>
 
       <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm text-zinc-600">
