@@ -85,6 +85,13 @@ function LocationRowFields({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Keep a ref to the latest onChangeInput so the autocomplete listener
+  // (which only attaches once on mount) always calls the current version.
+  // Without this, selecting from the dropdown would use a stale closure
+  // from mount time and reset every other row back to empty.
+  const onChangeInputRef = useRef(onChangeInput);
+  onChangeInputRef.current = onChangeInput;
+
   useEffect(() => {
     let autocomplete: google.maps.places.Autocomplete | undefined;
 
@@ -99,7 +106,7 @@ function LocationRowFields({
         });
         autocomplete.addListener("place_changed", () => {
           const place = autocomplete!.getPlace();
-          onChangeInput(place.name ?? place.formatted_address ?? inputRef.current!.value);
+          onChangeInputRef.current(place.name ?? place.formatted_address ?? inputRef.current!.value);
         });
       })
       .catch(() => {
@@ -110,10 +117,8 @@ function LocationRowFields({
     return () => {
       autocomplete?.unbindAll();
     };
-    // onChangeInput is a fresh function from the parent on every render, so we
-    // intentionally omit it from dependencies: including it would tear down and
-    // re-attach the Google Maps autocomplete listener on every keystroke elsewhere
-    // in the form, when it should only attach once when this row mounts.
+    // Effect intentionally runs once on mount — the ref above keeps
+    // onChangeInput current without needing to re-attach the listener.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
