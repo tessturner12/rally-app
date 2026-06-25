@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 type TimeIs = "arriving" | "departing";
+type Mode = "now" | TimeIs;
 
 type TimePreferenceToggleProps = {
   timePreference?: { timeIs: TimeIs; time: string };
@@ -22,33 +23,37 @@ function toHHmm(value: string): string {
   return value.replace(":", "");
 }
 
-// An optional, collapsed-by-default control for "I need to be there by a
-// certain time" or "we're all leaving at a certain time" - leaving it
-// closed means every journey lookup just assumes "leaving right now",
-// exactly like before this feature existed.
+// Three always-visible pills let someone pick their timing preference at a
+// glance without having to expand anything. "Now" is the default and clears
+// any previously set preference. "Arrive by" and "Depart at" reveal a time
+// input below the pills so they can pick an exact time.
 export default function TimePreferenceToggle({
   timePreference,
   onSet,
   onClear,
 }: TimePreferenceToggleProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [timeIs, setTimeIs] = useState<TimeIs>(timePreference?.timeIs ?? "arriving");
+  // Start on the pill that matches the saved preference, or "now" if none.
+  const [mode, setMode] = useState<Mode>(timePreference?.timeIs ?? "now");
   const [timeValue, setTimeValue] = useState(
     timePreference ? toInputValue(timePreference.time) : ""
   );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen && !timePreference) {
-    return (
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="text-left text-sm font-medium text-rose-600 underline"
-      >
-        + When do you need to be there? (optional)
-      </button>
-    );
+  async function handleModeChange(next: Mode) {
+    setMode(next);
+    setError(null);
+    // Tapping "Now" immediately clears any saved time preference.
+    if (next === "now" && timePreference) {
+      setIsSaving(true);
+      try {
+        await onClear();
+      } catch {
+        setError("Could not clear that time");
+      } finally {
+        setIsSaving(false);
+      }
+    }
   }
 
   async function handleSet() {
@@ -56,10 +61,11 @@ export default function TimePreferenceToggle({
       setError("Pick a time first");
       return;
     }
+    if (mode === "now") return;
     setError(null);
     setIsSaving(true);
     try {
-      await onSet(timeIs, toHHmm(timeValue));
+      await onSet(mode, toHHmm(timeValue));
     } catch {
       setError("Could not save that time");
     } finally {
@@ -67,74 +73,67 @@ export default function TimePreferenceToggle({
     }
   }
 
-  async function handleClear() {
-    setIsSaving(true);
-    setError(null);
-    try {
-      await onClear();
-      setTimeValue("");
-      setIsOpen(false);
-    } catch {
-      setError("Could not clear that time");
-    } finally {
-      setIsSaving(false);
-    }
-  }
+  const pills: { value: Mode; label: string }[] = [
+    { value: "now", label: "Now" },
+    { value: "arriving", label: "Arrive by" },
+    { value: "departing", label: "Depart at" },
+  ];
+
+  const showTimeInput = mode !== "now";
+  // Show the Set/Update button whenever a timed mode is selected.
+  const showSetButton = mode !== "now";
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4">
+    <div className="flex flex-col gap-3">
+      {/* Three-pill selector */}
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setTimeIs("arriving")}
-          className={`flex-1 rounded-full px-4 py-2 text-sm font-medium ${
-            timeIs === "arriving" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700"
-          }`}
-        >
-          Arrive by
-        </button>
-        <button
-          type="button"
-          onClick={() => setTimeIs("departing")}
-          className={`flex-1 rounded-full px-4 py-2 text-sm font-medium ${
-            timeIs === "departing" ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700"
-          }`}
-        >
-          Depart at
-        </button>
+        {pills.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            disabled={isSaving}
+            onClick={() => handleModeChange(value)}
+            className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
+              mode === value
+                ? "bg-zinc-900 text-white"
+                : "border border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-      <input
-        type="time"
-        value={timeValue}
-        onChange={(event) => setTimeValue(event.target.value)}
-        className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-base"
-      />
-      <div className="flex gap-2">
+
+      {/* Time input — only shown when Arrive by or Depart at is selected */}
+      {showTimeInput && (
+        <input
+          type="time"
+          value={timeValue}
+          onChange={(event) => setTimeValue(event.target.value)}
+          className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-base"
+        />
+      )}
+
+      {/* Set/Update button */}
+      {showSetButton && (
         <button
           type="button"
           onClick={handleSet}
           disabled={isSaving}
-          className="flex-1 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:bg-zinc-400"
+          className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:bg-zinc-400"
         >
-          {timePreference ? "Update" : "Set"}
+          {timePreference ? "Update" : "Set time"}
         </button>
-        {timePreference && (
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={isSaving}
-            className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-      {timePreference && (
-        <p className="text-sm text-zinc-600">
+      )}
+
+      {/* Confirmation of what's currently saved */}
+      {timePreference && mode !== "now" && (
+        <p className="text-sm text-zinc-500">
           {timePreference.timeIs === "arriving" ? "Arriving by" : "Departing at"}{" "}
           {toInputValue(timePreference.time)}
         </p>
       )}
+
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );

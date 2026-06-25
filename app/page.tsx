@@ -133,6 +133,48 @@ export default function Home() {
         </ol>
       </section>
 
+      {/* Mini example — shows what a Rally result looks like with fake data.
+          Helps people understand the output before they start a search. */}
+      <section className="flex flex-col gap-4 border-t border-zinc-100 px-6 py-12">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-zinc-900">Here&apos;s what it looks like</h2>
+          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-500">
+            Example only
+          </span>
+        </div>
+        <div className="rounded-xl border-2 border-rose-600 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-zinc-900">Oxford Circus</h3>
+            <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
+              ★ BEST
+            </span>
+          </div>
+          <div className="mt-3 flex flex-col gap-2">
+            {[
+              { name: "Tess", from: "Brixton", mins: 22 },
+              { name: "Sam", from: "Shoreditch", mins: 24 },
+              { name: "Jo", from: "Ealing", mins: 26 },
+            ].map((person) => (
+              <div key={person.name} className="rounded-lg bg-zinc-100 p-3">
+                <p className="text-sm font-semibold text-zinc-800">
+                  {person.name} · from {person.from}
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-base font-bold text-zinc-900">{person.mins} mins total</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 rounded-lg bg-rose-50 px-4 py-3 text-center">
+            <p className="text-xs font-medium uppercase tracking-wide text-rose-500">Avg. journey time</p>
+            <p className="text-2xl font-bold text-rose-700">24 mins</p>
+          </div>
+          <div className="mt-3 border-t border-zinc-200 pt-3 text-sm text-zinc-600">
+            <span>Longest journey: 26 mins</span>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ — tap a question to expand the answer, tap again to collapse. */}
       <section className="flex flex-col gap-6 border-t border-zinc-100 px-6 py-12">
         <h2 className="text-xl font-bold text-zinc-900">FAQ</h2>

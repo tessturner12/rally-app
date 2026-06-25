@@ -60,7 +60,7 @@ export default function LocationsForm({ rows, onChange, maxRows, disabled }: Loc
         <button
           type="button"
           onClick={addRow}
-          className="self-start text-sm font-medium text-rose-600 underline"
+          className="self-start rounded-full border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600"
         >
           + Add another
         </button>

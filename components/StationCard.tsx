@@ -90,7 +90,7 @@ export default function StationCard({
               ))}
             </ul>
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-zinc-900">
+              <span className="text-base font-bold text-zinc-900">
                 {journey.minutes} mins total
               </span>
               <button
@@ -99,7 +99,7 @@ export default function StationCard({
                   event.stopPropagation();
                   setMapForPersonIndex(index);
                 }}
-                className="text-sm font-medium text-rose-600 underline"
+                className="rounded-full bg-rose-600 px-3 py-1 text-xs font-semibold text-white"
               >
                 Show map
               </button>
@@ -108,9 +108,14 @@ export default function StationCard({
         ))}
       </div>
 
+      {/* Prominent average time badge sits above the footer stat row */}
+      <div className="rounded-lg bg-rose-50 px-4 py-3 text-center">
+        <p className="text-xs font-medium uppercase tracking-wide text-rose-500">Avg. journey time</p>
+        <p className="text-2xl font-bold text-rose-700">{station.averageTime} mins</p>
+      </div>
+
       <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm text-zinc-600">
-        <span>Time Difference: {station.timeDifference} mins</span>
-        <span>Average Time: {station.averageTime} mins</span>
+        <span>Time difference: {station.timeDifference} mins</span>
       </div>
 
       <button
