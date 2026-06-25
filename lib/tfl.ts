@@ -17,6 +17,19 @@ type TflJourneyResponse = {
   journeys?: Array<{ duration: number }>
 }
 
+// Without an API key, TfL rate-limits aggressively - busy enough that running
+// up to 90+ journey lookups for a single search (even spread over the 10-at-a-
+// -time limit below) reliably gets some of them back as "429 Too Many
+// Requests". A 429 doesn't mean "no route exists" the way a 404 or 500 does -
+// it means "ask again in a moment" - so it gets a couple of short retries
+// before giving up, instead of being treated as a dead end straight away.
+const MAX_TFL_ATTEMPTS = 3
+const RETRY_BASE_DELAY_MS = 300
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 // Asks TfL for the journey time (in minutes) between two points.
 // Returns null - rather than throwing - if TfL can't find a route, or if the
 // request itself fails. The rest of the app is built to skip a candidate
@@ -34,20 +47,32 @@ export async function getJourneyTime(
     appKey ? `?app_key=${appKey}` : ''
   }`
 
-  let response: Response
-  try {
-    response = await fetch(url)
-  } catch {
-    return null
+  for (let attempt = 1; attempt <= MAX_TFL_ATTEMPTS; attempt++) {
+    let response: Response
+    try {
+      response = await fetch(url)
+    } catch {
+      return null
+    }
+
+    if (response.ok) {
+      const data = (await response.json()) as TflJourneyResponse
+      const firstJourney = data.journeys?.[0]
+      return firstJourney ? firstJourney.duration : null
+    }
+
+    // Only a 429 is worth retrying - anything else (404, 500...) means this
+    // specific journey genuinely isn't available, not that TfL is busy.
+    const isRateLimited = response.status === 429
+    const hasAttemptsLeft = attempt < MAX_TFL_ATTEMPTS
+    if (!isRateLimited || !hasAttemptsLeft) {
+      return null
+    }
+
+    await wait(RETRY_BASE_DELAY_MS * attempt)
   }
 
-  if (!response.ok) {
-    return null
-  }
-
-  const data = (await response.json()) as TflJourneyResponse
-  const firstJourney = data.journeys?.[0]
-  return firstJourney ? firstJourney.duration : null
+  return null
 }
 
 type JourneyPair = {

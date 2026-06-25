@@ -53,6 +53,42 @@ describe('getJourneyTime', () => {
 
     expect(minutes).toBeNull()
   })
+
+  test('does not retry a non-429 failure - one bad request is not TfL being overloaded', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await getJourneyTime(51.5074, -0.1278, 51.5152, -0.1419)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  test('retries when TfL returns 429 Too Many Requests, succeeding on a later attempt', async () => {
+    let callCount = 0
+    const fetchMock = vi.fn().mockImplementation(async () => {
+      callCount++
+      if (callCount < 3) {
+        return { ok: false, status: 429, json: async () => ({}) }
+      }
+      return { ok: true, json: async () => ({ journeys: [{ duration: 15 }] }) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const minutes = await getJourneyTime(51.5074, -0.1278, 51.5152, -0.1419)
+
+    expect(minutes).toBe(15)
+    expect(callCount).toBe(3)
+  })
+
+  test('gives up and returns null if TfL keeps returning 429 after all retries are exhausted', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({}) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const minutes = await getJourneyTime(51.5074, -0.1278, 51.5152, -0.1419)
+
+    expect(minutes).toBeNull()
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(1)
+  })
 })
 
 describe('getJourneyTimes', () => {
