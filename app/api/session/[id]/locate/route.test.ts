@@ -8,15 +8,19 @@ vi.mock('@/lib/geocode', () => ({
 }))
 
 const addLocationMock = vi.fn()
+const removeLocationMock = vi.fn()
 class SessionNotFoundError extends Error {}
 class LocationLimitError extends Error {}
+class InvalidLocationIndexError extends Error {}
 vi.mock('@/lib/session', () => ({
   addLocation: (...args: unknown[]) => addLocationMock(...args),
+  removeLocation: (...args: unknown[]) => removeLocationMock(...args),
   SessionNotFoundError,
   LocationLimitError,
+  InvalidLocationIndexError,
 }))
 
-const { POST } = await import('./route')
+const { POST, DELETE } = await import('./route')
 
 function ctx(id: string) {
   return { params: Promise.resolve({ id }) }
@@ -25,11 +29,19 @@ function ctx(id: string) {
 beforeEach(() => {
   resolveLocationMock.mockReset()
   addLocationMock.mockReset()
+  removeLocationMock.mockReset()
 })
 
 function postRequest(body: unknown) {
   return new Request('http://localhost/api/session/abc123/locate', {
     method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+function deleteRequest(body: unknown) {
+  return new Request('http://localhost/api/session/abc123/locate', {
+    method: 'DELETE',
     body: JSON.stringify(body),
   })
 }
@@ -97,5 +109,57 @@ describe('POST /api/session/[id]/locate', () => {
 
     expect(response.status).toBe(400)
     expect(body).toEqual({ error: 'too many' })
+  })
+})
+
+describe('DELETE /api/session/[id]/locate', () => {
+  test('removes the location at the given index and returns the updated session', async () => {
+    const updatedSession = { id: 'abc123', createdAt: 1, locations: [] }
+    removeLocationMock.mockResolvedValue(updatedSession)
+
+    const response = await DELETE(deleteRequest({ index: 0 }), ctx('abc123'))
+    const body = await response.json()
+
+    expect(removeLocationMock).toHaveBeenCalledWith('abc123', 0)
+    expect(response.status).toBe(200)
+    expect(body).toEqual(updatedSession)
+  })
+
+  test('returns 400 when index is missing', async () => {
+    const response = await DELETE(deleteRequest({}), ctx('abc123'))
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(body).toEqual({ error: 'A location index is required' })
+    expect(removeLocationMock).not.toHaveBeenCalled()
+  })
+
+  test('returns 400 when index is not a number', async () => {
+    const response = await DELETE(deleteRequest({ index: 'zero' }), ctx('abc123'))
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(body).toEqual({ error: 'A location index is required' })
+    expect(removeLocationMock).not.toHaveBeenCalled()
+  })
+
+  test('returns 404 when the session does not exist', async () => {
+    removeLocationMock.mockRejectedValue(new SessionNotFoundError('missing session'))
+
+    const response = await DELETE(deleteRequest({ index: 0 }), ctx('missing'))
+    const body = await response.json()
+
+    expect(response.status).toBe(404)
+    expect(body).toEqual({ error: 'missing session' })
+  })
+
+  test('returns 400 when the index is out of range', async () => {
+    removeLocationMock.mockRejectedValue(new InvalidLocationIndexError('no location at index 5'))
+
+    const response = await DELETE(deleteRequest({ index: 5 }), ctx('abc123'))
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(body).toEqual({ error: 'no location at index 5' })
   })
 })
