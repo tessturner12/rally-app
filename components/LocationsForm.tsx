@@ -110,6 +110,10 @@ function LocationRowFields({
     return () => {
       autocomplete?.unbindAll();
     };
+    // onChangeInput is a fresh function from the parent on every render, so we
+    // intentionally omit it from dependencies: including it would tear down and
+    // re-attach the Google Maps autocomplete listener on every keystroke elsewhere
+    // in the form, when it should only attach once when this row mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
