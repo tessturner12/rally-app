@@ -21,6 +21,7 @@ export default function SessionPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [calculateError, setCalculateError] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   // Load the session once when the page opens - this covers both a fresh
   // session straight from the Home screen, and someone reopening a share
@@ -53,6 +54,24 @@ export default function SessionPage() {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error ?? "Could not add that location");
+    }
+    setSession(data as Session);
+  }
+
+  async function handleRemoveLocation(index: number) {
+    // Removal is immediate - no "are you sure" step - so this fires the
+    // request as soon as someone clicks "Remove" and just updates the list
+    // with whatever the server says is left.
+    setRemoveError(null);
+    const response = await fetch(`/api/session/${id}/locate`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ index }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      setRemoveError(data.error ?? "Could not remove that location");
+      return;
     }
     setSession(data as Session);
   }
@@ -136,13 +155,25 @@ export default function SessionPage() {
           {session.locations.map((location, index) => (
             <li
               key={index}
-              className="rounded-lg bg-zinc-100 px-4 py-3 text-sm text-zinc-800"
+              className="flex items-center justify-between gap-3 rounded-lg bg-zinc-100 px-4 py-3 text-sm text-zinc-800"
             >
-              {location.name ? `${location.name}: ` : ""}
-              {location.input}
+              <span>
+                {location.name ? `${location.name}: ` : ""}
+                {location.input}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemoveLocation(index)}
+                className="shrink-0 text-sm font-medium text-zinc-500 underline hover:text-red-600"
+              >
+                Remove
+              </button>
             </li>
           ))}
         </ul>
+      )}
+      {removeError && (
+        <p className="text-center text-sm text-red-600">{removeError}</p>
       )}
 
       <LocationForm onAdd={handleAddLocation} disabled={isFull} />
