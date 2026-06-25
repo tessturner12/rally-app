@@ -38,6 +38,9 @@ export default function SessionPage() {
         if (data) {
           setSession(data as Session);
         }
+      })
+      .catch(() => {
+        setNotFound(true);
       });
   }, [id]);
 

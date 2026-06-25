@@ -27,6 +27,9 @@ export default function ResultsPage() {
         if (data) {
           setSession(data as Session);
         }
+      })
+      .catch(() => {
+        setNotFound(true);
       });
   }, [id]);
 
