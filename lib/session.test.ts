@@ -8,9 +8,11 @@ const {
   createSession,
   getSession,
   addLocation,
+  removeLocation,
   saveResults,
   SessionNotFoundError,
   LocationLimitError,
+  InvalidLocationIndexError,
 } = await import('./session')
 
 beforeEach(() => {
@@ -118,5 +120,44 @@ describe('saveResults', () => {
         venues: [],
       })
     ).rejects.toThrow(SessionNotFoundError)
+  })
+})
+
+describe('removeLocation', () => {
+  test('removes the location at the given index and leaves the others in place', async () => {
+    const stored = {
+      id: 'abc',
+      createdAt: 1,
+      locations: [
+        { name: 'Alex', input: 'Brixton', lat: 1, lng: 2 },
+        { name: 'Sam', input: 'Hackney', lat: 3, lng: 4 },
+      ],
+    }
+    redisMock.get.mockResolvedValue(stored)
+
+    const updated = await removeLocation('abc', 0)
+
+    expect(updated.locations).toEqual([{ name: 'Sam', input: 'Hackney', lat: 3, lng: 4 }])
+    expect(redisMock.set).toHaveBeenCalledWith('session:abc', updated, { ex: 24 * 60 * 60 })
+  })
+
+  test('throws SessionNotFoundError when the session does not exist', async () => {
+    redisMock.get.mockResolvedValue(null)
+
+    await expect(removeLocation('missing', 0)).rejects.toThrow(SessionNotFoundError)
+  })
+
+  test('throws InvalidLocationIndexError for a negative index', async () => {
+    const stored = { id: 'abc', createdAt: 1, locations: [{ name: 'Alex', input: 'Brixton', lat: 1, lng: 2 }] }
+    redisMock.get.mockResolvedValue(stored)
+
+    await expect(removeLocation('abc', -1)).rejects.toThrow(InvalidLocationIndexError)
+  })
+
+  test('throws InvalidLocationIndexError for an index past the end of the list', async () => {
+    const stored = { id: 'abc', createdAt: 1, locations: [{ name: 'Alex', input: 'Brixton', lat: 1, lng: 2 }] }
+    redisMock.get.mockResolvedValue(stored)
+
+    await expect(removeLocation('abc', 1)).rejects.toThrow(InvalidLocationIndexError)
   })
 })

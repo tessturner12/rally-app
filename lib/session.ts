@@ -44,6 +44,18 @@ export class LocationLimitError extends Error {
   }
 }
 
+// Thrown when someone tries to remove a location at a position that doesn't
+// exist in the list - e.g. index 5 when there are only 2 locations. The API
+// route never normally produces this from the UI (the index always comes
+// from what's currently on screen), but it's a cheap safety net against a
+// stale tab racing a removal against a reload.
+export class InvalidLocationIndexError extends Error {
+  constructor(index: number) {
+    super(`No location at index ${index}`)
+    this.name = 'InvalidLocationIndexError'
+  }
+}
+
 const MAX_LOCATIONS = 6
 const SESSION_TTL_SECONDS = 24 * 60 * 60
 
@@ -80,6 +92,19 @@ export async function addLocation(id: string, location: LocationInput): Promise<
   }
 
   session.locations.push(location)
+  return save(session)
+}
+
+export async function removeLocation(id: string, index: number): Promise<Session> {
+  const session = await getSession(id)
+  if (!session) {
+    throw new SessionNotFoundError(id)
+  }
+  if (index < 0 || index >= session.locations.length) {
+    throw new InvalidLocationIndexError(index)
+  }
+
+  session.locations.splice(index, 1)
   return save(session)
 }
 
