@@ -4,14 +4,16 @@
 // every person, for every candidate station, and use the answers to find the
 // fairest meeting point.
 //
-// NOTE — caching not wired up yet: the project spec says every call here should
-// first check a cache (Vercel KV) before hitting TfL, since these calls are slow
-// (1-2 seconds each) and TfL rate-limits how many you can make. We don't have a
-// Vercel KV store set up yet, so for now every call goes straight to TfL. Once KV
-// is set up, add a cache check at the top of getJourneyTime (cache key:
-// `tfl:{fromLat},{fromLng}:{toLat},{toLng}`, 6 hour TTL) before the fetch below.
+// These calls are slow (1-2 seconds each) and TfL rate-limits how many you can
+// make, so every lookup is cached in Redis first (key: `tfl:{from}:{to}`, 6
+// hour TTL — a journey time between two fixed points doesn't change minute to
+// minute, so a few hours of staleness is fine). A null result (no route found,
+// or the request failed) is deliberately NOT cached — those happen during
+// transient TfL rate-limiting, and caching a null would lock in that failure
+// for 6 hours even after TfL recovers.
 
 import pLimit from 'p-limit'
+import { redis } from './kv'
 
 type TflJourneyResponse = {
   journeys?: Array<{ duration: number }>
@@ -25,6 +27,7 @@ type TflJourneyResponse = {
 // before giving up, instead of being treated as a dead end straight away.
 const MAX_TFL_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 300
+const CACHE_TTL_SECONDS = 6 * 60 * 60
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -42,6 +45,13 @@ export async function getJourneyTime(
 ): Promise<number | null> {
   const from = `${fromLat},${fromLng}`
   const to = `${toLat},${toLng}`
+  const cacheKey = `tfl:${from}:${to}`
+
+  const cached = await redis.get<number>(cacheKey)
+  if (cached !== null && cached !== undefined) {
+    return cached
+  }
+
   const appKey = process.env.TFL_API_KEY
   const url = `https://api.tfl.gov.uk/Journey/JourneyResults/${from}/to/${to}${
     appKey ? `?app_key=${appKey}` : ''
@@ -58,7 +68,11 @@ export async function getJourneyTime(
     if (response.ok) {
       const data = (await response.json()) as TflJourneyResponse
       const firstJourney = data.journeys?.[0]
-      return firstJourney ? firstJourney.duration : null
+      if (!firstJourney) {
+        return null
+      }
+      await redis.set(cacheKey, firstJourney.duration, { ex: CACHE_TTL_SECONDS })
+      return firstJourney.duration
     }
 
     // Only a 429 is worth retrying - anything else (404, 500...) means this

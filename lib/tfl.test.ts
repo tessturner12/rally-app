@@ -1,5 +1,15 @@
-import { describe, test, expect, vi, afterEach } from 'vitest'
-import { getJourneyTime, getJourneyTimes } from './tfl'
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
+
+const redisMock = { get: vi.fn(), set: vi.fn() }
+vi.mock('./kv', () => ({ redis: redisMock }))
+
+const { getJourneyTime, getJourneyTimes } = await import('./tfl')
+
+beforeEach(() => {
+  redisMock.get.mockReset()
+  redisMock.set.mockReset()
+  redisMock.get.mockResolvedValue(null)
+})
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -88,6 +98,51 @@ describe('getJourneyTime', () => {
 
     expect(minutes).toBeNull()
     expect(fetchMock.mock.calls.length).toBeGreaterThan(1)
+  })
+
+  test('returns the cached journey time without calling TfL when there is a cache hit', async () => {
+    redisMock.get.mockResolvedValue(12)
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const minutes = await getJourneyTime(51.5074, -0.1278, 51.5152, -0.1419)
+
+    expect(minutes).toBe(12)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  test('looks up the cache using the from/to coordinates as the key', async () => {
+    redisMock.get.mockResolvedValue(12)
+    vi.stubGlobal('fetch', vi.fn())
+
+    await getJourneyTime(51.5074, -0.1278, 51.5152, -0.1419)
+
+    expect(redisMock.get).toHaveBeenCalledWith('tfl:51.5074,-0.1278:51.5152,-0.1419')
+  })
+
+  test('caches the journey time for 6 hours after a successful TfL lookup', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ journeys: [{ duration: 23 }] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await getJourneyTime(51.5074, -0.1278, 51.5152, -0.1419)
+
+    expect(redisMock.set).toHaveBeenCalledWith(
+      'tfl:51.5074,-0.1278:51.5152,-0.1419',
+      23,
+      { ex: 6 * 60 * 60 }
+    )
+  })
+
+  test('does not cache a null result, so a transient failure is not stuck in the cache for 6 hours', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await getJourneyTime(51.5074, -0.1278, 51.5152, -0.1419)
+
+    expect(redisMock.set).not.toHaveBeenCalled()
   })
 })
 
