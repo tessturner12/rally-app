@@ -1,22 +1,56 @@
 // This file talks to TfL's (Transport for London's) Journey Planner API, which
-// answers the question "how long would it take to get from point A to point B
-// on public transport?". This is the heart of Rally — we ask this question for
-// every person, for every candidate station, and use the answers to find the
-// fairest meeting point.
+// answers the question "how would someone actually get from point A to point
+// B on public transport, and how long would it take?". This is the heart of
+// Rally — we ask this question for every person, for every candidate station,
+// and use the answers (plus the step-by-step route) to find the fairest
+// meeting point and show everyone exactly how to get there.
 //
 // These calls are slow (1-2 seconds each) and TfL rate-limits how many you can
-// make, so every lookup is cached in Redis first (key: `tfl:{from}:{to}`, 6
-// hour TTL — a journey time between two fixed points doesn't change minute to
-// minute, so a few hours of staleness is fine). A null result (no route found,
-// or the request failed) is deliberately NOT cached — those happen during
-// transient TfL rate-limiting, and caching a null would lock in that failure
-// for 6 hours even after TfL recovers.
+// make, so every lookup is cached in Redis first (key: `tfl:{from}:{to}`, plus
+// a suffix when an arrive-by/depart-at time was requested, since the same
+// journey takes different amounts of time at rush hour vs. midnight). 6 hours
+// of staleness is fine for a journey time between two fixed points. A null
+// result (no route found, or the request failed) is deliberately NOT cached -
+// those happen during transient TfL rate-limiting, and caching a null would
+// lock in that failure for 6 hours even after TfL recovers.
 
 import pLimit from 'p-limit'
 import { redis } from './kv'
 
+// One step of a journey - e.g. "walk to the station", "take the Victoria
+// line three stops". `lineName` and `stops` are only present for legs that
+// are on a specific tube/bus/rail line, not for walking legs.
+export type JourneyLeg = {
+  mode: string
+  instruction: string
+  lineName?: string
+  stops?: number
+  durationMinutes: number
+}
+
+export type Journey = {
+  durationMinutes: number
+  legs: JourneyLeg[]
+}
+
+// Lets someone ask "what if I need to arrive by 7pm?" or "what if I'm
+// leaving at 5:30?" instead of always assuming "leaving right now" (TfL's
+// default when no time is given). `time` is 24-hour "HHmm", e.g. "1900".
+export type TimePreference = {
+  timeIs: 'arriving' | 'departing'
+  time: string
+}
+
+type TflLeg = {
+  duration: number
+  instruction?: { summary?: string }
+  mode?: { name?: string }
+  routeOptions?: Array<{ name?: string }>
+  path?: { stopPoints?: unknown[] }
+}
+
 type TflJourneyResponse = {
-  journeys?: Array<{ duration: number }>
+  journeys?: Array<{ duration: number; legs?: TflLeg[] }>
 }
 
 // Without an API key, TfL rate-limits aggressively - busy enough that running
@@ -33,29 +67,73 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// Asks TfL for the journey time (in minutes) between two points.
-// Returns null - rather than throwing - if TfL can't find a route, or if the
-// request itself fails. The rest of the app is built to skip a candidate
-// station gracefully when this happens, instead of crashing the whole search.
-export async function getJourneyTime(
+// TfL's leg objects don't give a plain "number of stops" field - the closest
+// available signal is the list of stop points along the leg's path, which
+// includes both the start and end stop. Subtracting 1 gives the number of
+// stops travelled through. Walking legs have no `path.stopPoints`, so this
+// is left undefined for them rather than guessed at.
+function toJourneyLeg(leg: TflLeg): JourneyLeg {
+  const mode = leg.mode?.name ?? 'unknown'
+  const lineName = leg.routeOptions?.[0]?.name
+  const stops = leg.path?.stopPoints ? Math.max(leg.path.stopPoints.length - 1, 0) : undefined
+  return {
+    mode,
+    instruction: leg.instruction?.summary ?? lineName ?? mode,
+    lineName,
+    stops,
+    durationMinutes: leg.duration,
+  }
+}
+
+function cacheKeySuffix(timePreference?: TimePreference): string {
+  return timePreference ? `:${timePreference.timeIs}-${timePreference.time}` : ''
+}
+
+function todayAsYYYYMMDD(): string {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}${month}${day}`
+}
+
+function buildJourneyUrl(from: string, to: string, appKey: string | undefined, timePreference?: TimePreference): string {
+  const params = new URLSearchParams()
+  if (appKey) {
+    params.set('app_key', appKey)
+  }
+  if (timePreference) {
+    params.set('date', todayAsYYYYMMDD())
+    params.set('time', timePreference.time)
+    params.set('timeIs', timePreference.timeIs === 'arriving' ? 'Arriving' : 'Departing')
+  }
+  const query = params.toString()
+  return `https://api.tfl.gov.uk/Journey/JourneyResults/${from}/to/${to}${query ? `?${query}` : ''}`
+}
+
+// Asks TfL for the journey (duration in minutes, plus the step-by-step legs)
+// between two points. Returns null - rather than throwing - if TfL can't find
+// a route, or if the request itself fails. The rest of the app is built to
+// skip a candidate station gracefully when this happens, instead of crashing
+// the whole search.
+export async function getJourney(
   fromLat: number,
   fromLng: number,
   toLat: number,
-  toLng: number
-): Promise<number | null> {
+  toLng: number,
+  timePreference?: TimePreference
+): Promise<Journey | null> {
   const from = `${fromLat},${fromLng}`
   const to = `${toLat},${toLng}`
-  const cacheKey = `tfl:${from}:${to}`
+  const cacheKey = `tfl:${from}:${to}${cacheKeySuffix(timePreference)}`
 
-  const cached = await redis.get<number>(cacheKey)
+  const cached = await redis.get<Journey>(cacheKey)
   if (cached !== null && cached !== undefined) {
     return cached
   }
 
   const appKey = process.env.TFL_API_KEY
-  const url = `https://api.tfl.gov.uk/Journey/JourneyResults/${from}/to/${to}${
-    appKey ? `?app_key=${appKey}` : ''
-  }`
+  const url = buildJourneyUrl(from, to, appKey, timePreference)
 
   for (let attempt = 1; attempt <= MAX_TFL_ATTEMPTS; attempt++) {
     let response: Response
@@ -71,8 +149,12 @@ export async function getJourneyTime(
       if (!firstJourney) {
         return null
       }
-      await redis.set(cacheKey, firstJourney.duration, { ex: CACHE_TTL_SECONDS })
-      return firstJourney.duration
+      const journey: Journey = {
+        durationMinutes: firstJourney.duration,
+        legs: (firstJourney.legs ?? []).map(toJourneyLeg),
+      }
+      await redis.set(cacheKey, journey, { ex: CACHE_TTL_SECONDS })
+      return journey
     }
 
     // Only a 429 is worth retrying - anything else (404, 500...) means this
@@ -103,11 +185,14 @@ type JourneyPair = {
 // together.
 const MAX_CONCURRENT_TFL_REQUESTS = 10
 
-export async function getJourneyTimes(pairs: JourneyPair[]): Promise<Array<number | null>> {
+export async function getJourneys(
+  pairs: JourneyPair[],
+  timePreference?: TimePreference
+): Promise<Array<Journey | null>> {
   const limit = pLimit(MAX_CONCURRENT_TFL_REQUESTS)
   return Promise.all(
     pairs.map((pair) =>
-      limit(() => getJourneyTime(pair.fromLat, pair.fromLng, pair.toLat, pair.toLng))
+      limit(() => getJourney(pair.fromLat, pair.fromLng, pair.toLat, pair.toLng, timePreference))
     )
   )
 }

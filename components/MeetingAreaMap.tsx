@@ -3,15 +3,17 @@
 import { useEffect, useRef } from "react";
 import { loadGoogleMaps } from "@/lib/googleMaps";
 
-type RallyMapProps = {
+type MeetingAreaMapProps = {
   lat: number;
   lng: number;
   label: string;
 };
 
-// Shows the winning station on a map with a single marker, so it's
-// immediately obvious where everyone's meeting - not just a name on a list.
-export default function RallyMap({ lat, lng, label }: RallyMapProps) {
+// Shows whichever ranked station is currently selected on the Results
+// screen, with a single marker - it's immediately obvious where that
+// option would mean meeting, not just a name on a list. Re-centres itself
+// whenever a different card is tapped, since `lat`/`lng`/`label` change.
+export default function MeetingAreaMap({ lat, lng, label }: MeetingAreaMapProps) {
   const mapDivRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -4,6 +4,7 @@
 // routes never have to think about cache keys or expiry themselves.
 
 import { redis } from './kv'
+import type { RankedStation } from './algorithm'
 
 export type LocationInput = {
   name: string
@@ -12,16 +13,23 @@ export type LocationInput = {
   lng: number
 }
 
+// Whether the group wants to arrive by a certain time or leave at a certain
+// time - this gets passed through to the TfL journey planner. Optional
+// because the default search just uses "right now".
+export type TimePreference = {
+  timeIs: 'arriving' | 'departing'
+  time: string
+}
+
 export type SessionResults = {
-  winningStation: { name: string; lat: number; lng: number; maxJourneyTime: number }
-  journeyTimes: Array<{ personName: string; minutes: number }>
-  venues: Array<{ name: string; type: string; rating: number; address: string; lat: number; lng: number }>
+  rankedStations: RankedStation[]
 }
 
 export type Session = {
   id: string
   createdAt: number
   locations: LocationInput[]
+  timePreference?: TimePreference
   results?: SessionResults
 }
 
@@ -92,6 +100,27 @@ export async function addLocation(id: string, location: LocationInput): Promise<
   }
 
   session.locations.push(location)
+  return save(session)
+}
+
+// Sets (or clears, when passed null) the group's preferred arrive-by/depart-at
+// time. Clearing it removes the field entirely rather than leaving it as
+// `undefined` on the stored object, so old "default to now" behaviour comes
+// back cleanly once a time preference is removed.
+export async function setTimePreference(
+  id: string,
+  timePreference: TimePreference | null
+): Promise<Session> {
+  const session = await getSession(id)
+  if (!session) {
+    throw new SessionNotFoundError(id)
+  }
+
+  if (timePreference === null) {
+    delete session.timePreference
+  } else {
+    session.timePreference = timePreference
+  }
   return save(session)
 }
 

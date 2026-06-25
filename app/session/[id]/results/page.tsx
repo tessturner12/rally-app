@@ -3,16 +3,19 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import RallyMap from "@/components/RallyMap";
+import MeetingAreaMap from "@/components/MeetingAreaMap";
+import StationCard from "@/components/StationCard";
 import type { Session } from "@/lib/session";
 
-// Screen 3 of Rally - the payoff screen. Shows where everyone should meet,
-// how long the longest journey is, what each person's journey looks like,
-// and a few real nearby places to actually go to.
+// Screen 3 of Rally - the payoff screen. Shows the top 3 fairest meeting
+// points, ranked best-first, each with a map, every person's real journey
+// (line-by-line, with a per-person map), fairness stats, and on-demand
+// nearby venues. Tapping a card moves the map at the top to match it.
 export default function ResultsPage() {
   const { id } = useParams<{ id: string }>();
   const [session, setSession] = useState<Session | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     fetch(`/api/session/${id}`)
@@ -54,7 +57,7 @@ export default function ResultsPage() {
     );
   }
 
-  if (!session.results) {
+  if (!session.results || session.results.rankedStations.length === 0) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
         <p className="text-lg text-zinc-700">
@@ -70,67 +73,33 @@ export default function ResultsPage() {
     );
   }
 
-  const { winningStation, journeyTimes, venues } = session.results;
+  const { rankedStations } = session.results;
+  const selectedStation = rankedStations[selectedIndex] ?? rankedStations[0];
 
   return (
     <main className="flex flex-1 flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-1 text-center">
-        <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-          Meet at
-        </p>
-        <h1 className="text-3xl font-bold text-rose-600">
-          {winningStation.name}
-        </h1>
-        <p className="text-sm text-zinc-600">
-          Longest journey: {winningStation.maxJourneyTime} mins
-        </p>
+        <h1 className="text-2xl font-bold text-rose-600">Suggested Meeting Points</h1>
       </div>
 
-      <RallyMap
-        lat={winningStation.lat}
-        lng={winningStation.lng}
-        label={winningStation.name}
+      <MeetingAreaMap
+        lat={selectedStation.lat}
+        lng={selectedStation.lng}
+        label={selectedStation.name}
       />
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-zinc-800">
-          Everyone&apos;s journey
-        </h2>
-        <ul className="flex flex-col gap-2">
-          {journeyTimes.map((journey, index) => (
-            <li
-              key={index}
-              className="flex justify-between rounded-lg bg-zinc-100 px-4 py-3 text-sm"
-            >
-              <span>{journey.personName || `Person ${index + 1}`}</span>
-              <span className="font-medium">{journey.minutes} mins</span>
-            </li>
-          ))}
-        </ul>
+      <div className="flex flex-col gap-4">
+        {rankedStations.map((station, index) => (
+          <StationCard
+            key={station.name}
+            station={station}
+            isBest={index === 0}
+            isSelected={index === selectedIndex}
+            onSelect={() => setSelectedIndex(index)}
+            timePreference={session.timePreference}
+          />
+        ))}
       </div>
-
-      {venues.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold text-zinc-800">
-            Somewhere to go
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {venues.map((venue, index) => (
-              <li
-                key={index}
-                className="rounded-lg border border-zinc-200 px-4 py-3"
-              >
-                <p className="font-medium text-zinc-800">{venue.name}</p>
-                <p className="text-sm text-zinc-500">
-                  {venue.type} ·{" "}
-                  {venue.rating > 0 ? `${venue.rating}★ · ` : ""}
-                  {venue.address}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <Link
         href="/"

@@ -10,6 +10,7 @@ const {
   addLocation,
   removeLocation,
   saveResults,
+  setTimePreference,
   SessionNotFoundError,
   LocationLimitError,
   InvalidLocationIndexError,
@@ -95,13 +96,21 @@ describe('addLocation', () => {
 })
 
 describe('saveResults', () => {
-  test("saves the results onto the session", async () => {
+  test('saves the ranked stations onto the session', async () => {
     const stored = { id: 'abc', createdAt: 1, locations: [] }
     redisMock.get.mockResolvedValue(stored)
     const results = {
-      winningStation: { name: 'Bank', lat: 1, lng: 2, maxJourneyTime: 20 },
-      journeyTimes: [{ personName: 'Alex', minutes: 20 }],
-      venues: [],
+      rankedStations: [
+        {
+          name: 'Bank',
+          lat: 1,
+          lng: 2,
+          maxJourneyTime: 20,
+          timeDifference: 5,
+          averageTime: 17,
+          journeyTimes: [{ personName: 'Alex', minutes: 20, legs: [], originLat: 10, originLng: 20 }],
+        },
+      ],
     }
 
     const updated = await saveResults('abc', results)
@@ -113,13 +122,36 @@ describe('saveResults', () => {
   test('throws SessionNotFoundError when the session does not exist', async () => {
     redisMock.get.mockResolvedValue(null)
 
-    await expect(
-      saveResults('missing', {
-        winningStation: { name: 'Bank', lat: 1, lng: 2, maxJourneyTime: 20 },
-        journeyTimes: [],
-        venues: [],
-      })
-    ).rejects.toThrow(SessionNotFoundError)
+    await expect(saveResults('missing', { rankedStations: [] })).rejects.toThrow(SessionNotFoundError)
+  })
+})
+
+describe('setTimePreference', () => {
+  test('sets the time preference on the session', async () => {
+    const stored = { id: 'abc', createdAt: 1, locations: [] }
+    redisMock.get.mockResolvedValue(stored)
+
+    const updated = await setTimePreference('abc', { timeIs: 'arriving', time: '1900' })
+
+    expect(updated.timePreference).toEqual({ timeIs: 'arriving', time: '1900' })
+    expect(redisMock.set).toHaveBeenCalledWith('session:abc', updated, { ex: 24 * 60 * 60 })
+  })
+
+  test('clears the time preference when given null', async () => {
+    const stored = { id: 'abc', createdAt: 1, locations: [], timePreference: { timeIs: 'departing', time: '0800' } }
+    redisMock.get.mockResolvedValue(stored)
+
+    const updated = await setTimePreference('abc', null)
+
+    expect(updated.timePreference).toBeUndefined()
+  })
+
+  test('throws SessionNotFoundError when the session does not exist', async () => {
+    redisMock.get.mockResolvedValue(null)
+
+    await expect(setTimePreference('missing', { timeIs: 'arriving', time: '1900' })).rejects.toThrow(
+      SessionNotFoundError
+    )
   })
 })
 

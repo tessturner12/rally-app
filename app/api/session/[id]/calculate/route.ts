@@ -1,12 +1,13 @@
 // Triggered when someone hits "Find Rally Point". Runs the actual fairness
-// calculation (Stage 3 + 4 of the build plan) over whatever locations have
-// been added so far, then saves the result onto the session so the results
-// page can read it back.
-//
+// calculation over whatever locations have been added so far (using the
+// session's arrive-by/depart-at time if one was set), then saves the ranked
+// results onto the session so the results page can read them back. Venue
+// suggestions are no longer fetched here - they're fetched on demand per
+// ranked station, from the Results screen, via /api/venues.
+
 import { NextResponse } from 'next/server'
 import { getSession, saveResults, SessionNotFoundError } from '@/lib/session'
-import { findBestStation, NoViableStationError } from '@/lib/algorithm'
-import { getNearbyVenues } from '@/lib/venues'
+import { findBestStations, NoViableStationError } from '@/lib/algorithm'
 
 export async function POST(
   _request: Request,
@@ -27,19 +28,8 @@ export async function POST(
   }
 
   try {
-    const { winningStation, journeyTimes } = await findBestStation(session.locations)
-
-    // Venue suggestions are a nice-to-have on top of the core result - if
-    // Google Places has a bad day, that shouldn't stop someone getting their
-    // Rally point, so a failure here just means an empty venue list.
-    let venues: Awaited<ReturnType<typeof getNearbyVenues>> = []
-    try {
-      venues = await getNearbyVenues(winningStation.lat, winningStation.lng)
-    } catch {
-      venues = []
-    }
-
-    const updated = await saveResults(id, { winningStation, journeyTimes, venues })
+    const rankedStations = await findBestStations(session.locations, session.timePreference)
+    const updated = await saveResults(id, { rankedStations })
     return NextResponse.json(updated, { status: 200 })
   } catch (error) {
     if (error instanceof NoViableStationError) {
