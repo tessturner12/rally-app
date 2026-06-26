@@ -210,7 +210,7 @@ export default function SessionPage() {
         <p className="text-lg text-zinc-700">
           This Rally has expired or doesn&apos;t exist.
         </p>
-        <Link href="/" className="font-medium text-blue-800 underline">
+        <Link href="/" className="font-medium text-[#02075d] underline">
           Start a new one
         </Link>
       </main>
@@ -248,7 +248,7 @@ export default function SessionPage() {
   return (
     <main className="flex flex-1 flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-2xl font-bold text-blue-800">Rally</h1>
+        <h1 className="text-2xl font-bold text-[#02075d]">Rally</h1>
         <p className="text-sm text-zinc-600">
           Add where everyone&apos;s coming from ({savedCount}/{MAX_LOCATIONS})
         </p>
@@ -298,7 +298,7 @@ export default function SessionPage() {
           type="button"
           onClick={handleFindRallyPoint}
           disabled={!canSubmit || isSavingRows}
-          className="w-full rounded-full bg-blue-800 px-8 py-4 text-lg font-semibold text-white disabled:cursor-not-allowed disabled:bg-blue-300"
+          className="w-full rounded-full bg-[#02075d] px-8 py-4 text-lg font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSavingRows ? "Saving..." : "Find Rally Point"}
         </button>

@@ -63,7 +63,7 @@ export default function StationCard({
     <div
       onClick={onSelect}
       className={`flex flex-col gap-4 rounded-xl border-2 p-4 ${
-        isSelected ? "border-blue-800" : "border-zinc-200"
+        isSelected ? "border-[#02075d]" : "border-zinc-200"
       }`}
     >
       <div className="flex items-center justify-between">
@@ -105,7 +105,7 @@ export default function StationCard({
                   event.stopPropagation();
                   setMapForPersonIndex(index);
                 }}
-                className="rounded-full bg-blue-800 px-3 py-1 text-xs font-semibold text-white"
+                className="rounded-full bg-[#02075d] px-3 py-1 text-xs font-semibold text-white"
               >
                 Show map
               </button>
@@ -115,9 +115,9 @@ export default function StationCard({
       </div>
 
       {/* Prominent average time badge sits above the footer stat row */}
-      <div className="rounded-lg bg-blue-50 px-4 py-3 text-center">
-        <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Avg. journey time</p>
-        <p className="text-2xl font-bold text-blue-900">{station.averageTime} mins</p>
+      <div className="rounded-lg bg-[#eef0fb] px-4 py-3 text-center">
+        <p className="text-xs font-medium uppercase tracking-wide text-[#02075d]">Avg. journey time</p>
+        <p className="text-2xl font-bold text-[#02075d]">{station.averageTime} mins</p>
       </div>
 
       <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm text-zinc-600">

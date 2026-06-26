@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 
+// Time options every 15 minutes across the full day, generated once at
+// module load so the component doesn't rebuild the list on every render.
+const TIME_OPTIONS: { value: string; label: string }[] = [];
+for (let hour = 0; hour <= 23; hour++) {
+  for (const min of [0, 15, 30, 45]) {
+    const hh = String(hour).padStart(2, "0");
+    const mm = String(min).padStart(2, "0");
+    TIME_OPTIONS.push({ value: `${hh}:${mm}`, label: `${hh}:${mm}` });
+  }
+}
+
 type TimeIs = "arriving" | "departing";
 type Mode = "now" | TimeIs;
 
@@ -104,14 +115,18 @@ export default function TimePreferenceToggle({
         ))}
       </div>
 
-      {/* Time input — only shown when Arrive by or Depart at is selected */}
+      {/* Time dropdown — only shown when Arrive by or Depart at is selected */}
       {showTimeInput && (
-        <input
-          type="time"
+        <select
           value={timeValue}
           onChange={(event) => setTimeValue(event.target.value)}
           className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-base"
-        />
+        >
+          <option value="">Pick a time...</option>
+          {TIME_OPTIONS.map(({ value, label }) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
       )}
 
       {/* Set/Update button */}
