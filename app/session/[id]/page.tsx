@@ -20,7 +20,7 @@ export default function SessionPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const occasion = searchParams.get("for");
+  const [occasion, setOccasion] = useState(searchParams.get("for") ?? "all");
 
   const [session, setSession] = useState<Session | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -131,7 +131,7 @@ export default function SessionPage() {
       if (!response.ok) {
         throw new Error(data.error ?? "Could not calculate a Rally point");
       }
-      const resultsUrl = occasion
+      const resultsUrl = occasion !== "all"
         ? `/session/${id}/results?for=${occasion}`
         : `/session/${id}/results`;
       router.push(resultsUrl);
@@ -297,6 +297,33 @@ export default function SessionPage() {
         onSet={handleSetTimePreference}
         onClear={handleClearTimePreference}
       />
+
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-zinc-700">
+          What are you meeting up for?
+        </label>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: "Anything", value: "all" },
+            { label: "Food", value: "food" },
+            { label: "Drinks", value: "drinks" },
+            { label: "Coffee", value: "coffee" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setOccasion(opt.value)}
+              className={`rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
+                occasion === opt.value
+                  ? "border-[#02075d] bg-[#02075d] text-white"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-[#02075d] hover:text-[#02075d]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex flex-col gap-2">
         <button

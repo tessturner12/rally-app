@@ -155,18 +155,10 @@ const FAQ = [
 
 // Screen 1 of Rally — the landing page. Explains what Rally is, how it
 // works, and answers common questions before someone taps the button.
-const OCCASION_OPTIONS = [
-  { label: "Any — show me everything", value: "all" },
-  { label: "Food / Dinner", value: "food" },
-  { label: "Drinks / Pub", value: "drinks" },
-  { label: "Coffee / Café", value: "coffee" },
-];
-
 export default function Home() {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [occasion, setOccasion] = useState("all");
   // Which FAQ item is currently open — null means all collapsed.
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -179,10 +171,7 @@ export default function Home() {
         throw new Error("Could not start a new Rally");
       }
       const { id } = (await response.json()) as { id: string };
-      const dest = occasion !== "all"
-        ? `/session/${id}?for=${occasion}`
-        : `/session/${id}`;
-      router.push(dest);
+      router.push(`/session/${id}`);
     } catch {
       setError("Something went wrong starting your Rally. Please try again.");
       setIsStarting(false);
@@ -204,31 +193,14 @@ export default function Home() {
           that&apos;s genuinely fair for everyone — based on real tube times, not
           just the map midpoint.
         </p>
-        <div className="flex w-full max-w-xs flex-col gap-3">
-          <div className="flex flex-col gap-1 text-left">
-            <label htmlFor="occasion" className="text-sm font-medium text-zinc-600">
-              What are you meeting up for?
-            </label>
-            <select
-              id="occasion"
-              value={occasion}
-              onChange={(e) => setOccasion(e.target.value)}
-              className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#02075d]"
-            >
-              {OCCASION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="button"
-            onClick={handleStart}
-            disabled={isStarting}
-            className="w-full cursor-pointer rounded-full bg-[#02075d] px-8 py-4 text-lg font-semibold text-white shadow-md transition-all hover:bg-[#01054a] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isStarting ? "Starting..." : "Find somewhere to meet"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleStart}
+          disabled={isStarting}
+          className="w-full max-w-xs cursor-pointer rounded-full bg-[#02075d] px-8 py-4 text-lg font-semibold text-white shadow-md transition-all hover:bg-[#01054a] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isStarting ? "Starting..." : "Find somewhere to meet"}
+        </button>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
 

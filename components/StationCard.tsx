@@ -15,49 +15,76 @@ type StationCardProps = {
   occasion?: string;
 };
 
-const VENUE_FILTER_OPTIONS = [
+const VENUE_FILTERS = [
   { label: "All", value: "all" },
-  { label: "Food", value: "food" },
-  { label: "Drinks", value: "drinks" },
-  { label: "Coffee", value: "coffee" },
+  { label: "🍽 Food", value: "food" },
+  { label: "☕ Coffee", value: "coffee" },
+  { label: "🍺 Drinks", value: "drinks" },
 ];
 
-// Tube and rail modes get a horizontal coloured bar; walk/bus get a dot.
 const TUBE_MODES = new Set(["tube", "dlr", "overground", "elizabeth-line", "national-rail"]);
 
 function toTitleCase(str: string): string {
   return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// A small inline route preview: coloured dots and bars mirroring the leg list.
+// Compact preview bar showing the sequence of legs as dots (walk/bus) or
+// coloured pills (tube lines) — gives a visual summary before the leg list.
 function RoutePreview({ legs }: { legs: Array<{ lineName?: string; mode: string }> }) {
   return (
-    <div className="flex items-center gap-1 overflow-hidden rounded-lg bg-zinc-50 px-3 py-2">
+    <div className="flex items-center gap-1 overflow-hidden">
       {legs.map((leg, i) => {
         const colour = colourForLine(leg.lineName, leg.mode);
         const isTube = TUBE_MODES.has(leg.mode);
         return (
           <div key={i} className="flex shrink-0 items-center gap-1">
             {isTube ? (
-              <span
-                className="h-2 w-8 rounded-full"
-                style={{ backgroundColor: colour }}
-                title={leg.lineName ?? leg.mode}
-              />
+              <span className="h-2 w-8 rounded-full" style={{ backgroundColor: colour }} title={leg.lineName ?? leg.mode} />
             ) : (
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: colour }}
-                title={leg.mode}
-              />
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colour }} title={leg.mode} />
             )}
-            {i < legs.length - 1 && (
-              <span className="text-xs text-zinc-300">›</span>
-            )}
+            {i < legs.length - 1 && <span className="text-xs text-zinc-300">›</span>}
           </div>
         );
       })}
     </div>
+  );
+}
+
+// Static Google Maps thumbnail showing the straight-line path from origin to
+// station — gives a quick visual sense of direction before opening the full
+// interactive route.
+function RouteThumbnail({
+  originLat,
+  originLng,
+  destLat,
+  destLng,
+}: {
+  originLat: number;
+  originLng: number;
+  destLat: number;
+  destLng: number;
+}) {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return null;
+
+  const src =
+    `https://maps.googleapis.com/maps/api/staticmap` +
+    `?size=160x100` +
+    `&markers=color:0x02075d|${originLat},${originLng}` +
+    `&markers=color:red|${destLat},${destLng}` +
+    `&path=color:0x02075d80|weight:3|${originLat},${originLng}|${destLat},${destLng}` +
+    `&key=${apiKey}`;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt="Route map"
+      width={160}
+      height={100}
+      className="rounded-lg object-cover"
+    />
   );
 }
 
@@ -98,9 +125,7 @@ export default function StationCard({
 
   function handleFilterChange(value: string) {
     setVenueFilter(value);
-    if (venues !== null) {
-      handleFindVenues(value);
-    }
+    handleFindVenues(value);
   }
 
   async function handleShare() {
@@ -141,46 +166,51 @@ export default function StationCard({
               {journey.personName || `Person ${index + 1}`}
             </p>
             <RoutePreview legs={journey.legs} />
-            <ul className="mt-2 flex flex-col gap-1.5">
-              {journey.legs.map((leg, legIndex) => {
-                const colour = colourForLine(leg.lineName, leg.mode);
-                const isTube = TUBE_MODES.has(leg.mode);
-                return (
-                  <li key={legIndex} className="flex items-center gap-2 text-sm text-zinc-700">
-                    {isTube ? (
-                      <span
-                        className="h-1.5 w-6 shrink-0 rounded-full"
-                        style={{ backgroundColor: colour }}
-                      />
-                    ) : (
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: colour }}
-                      />
-                    )}
-                    <span>
-                      {toTitleCase(leg.instruction)} ({leg.durationMinutes} min
-                      {leg.stops !== undefined ? `, ${leg.stops} stops` : ""})
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-base font-bold text-zinc-900">
-                {journey.minutes} mins total
-              </span>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setMapForPersonIndex(index);
-                }}
-                className="cursor-pointer rounded-full bg-[#02075d] px-3 py-1 text-xs font-semibold text-white hover:bg-[#01054a]"
+
+            {/* Journey legs on the left, map thumbnail + Show route on the right */}
+            <div className="mt-2 flex gap-3">
+              <ul className="flex flex-1 flex-col gap-1.5">
+                {journey.legs.map((leg, legIndex) => {
+                  const colour = colourForLine(leg.lineName, leg.mode);
+                  const isTube = TUBE_MODES.has(leg.mode);
+                  return (
+                    <li key={legIndex} className="flex items-center gap-2 text-sm text-zinc-700">
+                      {isTube ? (
+                        <span className="h-1.5 w-6 shrink-0 rounded-full" style={{ backgroundColor: colour }} />
+                      ) : (
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colour }} />
+                      )}
+                      <span>
+                        {toTitleCase(leg.instruction)} ({leg.durationMinutes} min
+                        {leg.stops !== undefined ? `, ${leg.stops} stops` : ""})
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* Map thumbnail + Show route */}
+              <div
+                className="flex shrink-0 flex-col items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
               >
-                Show route
-              </button>
+                <RouteThumbnail
+                  originLat={journey.originLat}
+                  originLng={journey.originLng}
+                  destLat={station.lat}
+                  destLng={station.lng}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMapForPersonIndex(index)}
+                  className="w-full cursor-pointer rounded-full bg-[#02075d] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#01054a]"
+                >
+                  Show route
+                </button>
+              </div>
             </div>
+
+            <p className="mt-2 text-base font-bold text-zinc-900">{journey.minutes} mins total</p>
           </div>
         ))}
       </div>
@@ -194,25 +224,36 @@ export default function StationCard({
         <span>Time difference: {station.timeDifference} mins</span>
       </div>
 
-      {/* Venue filter + load button */}
-      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-        <select
-          value={venueFilter}
-          onChange={(e) => handleFilterChange(e.target.value)}
-          className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700"
-        >
-          {VENUE_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+      {/* Find Nearby Venues button — filter buttons appear after the first fetch */}
+      <div onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); handleFindVenues(); }}
+          onClick={() => handleFindVenues()}
           disabled={isLoadingVenues}
-          className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-emerald-300"
+          className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:bg-emerald-300"
         >
-          {isLoadingVenues ? "Loading..." : venues !== null ? "Refresh venues" : "Find Nearby Venues"}
+          {isLoadingVenues ? "Loading..." : "Find Nearby Venues"}
         </button>
+
+        {/* Filter buttons — only visible once venues have been fetched */}
+        {venues !== null && (
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {VENUE_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => handleFilterChange(f.value)}
+                className={`rounded-full border px-2 py-1.5 text-xs font-medium transition-colors ${
+                  venueFilter === f.value
+                    ? "border-[#02075d] bg-[#02075d] text-white"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-[#02075d] hover:text-[#02075d]"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {venuesError && <p className="text-sm text-red-600">{venuesError}</p>}
@@ -232,7 +273,6 @@ export default function StationCard({
         </ul>
       )}
 
-      {/* Share button per option */}
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); handleShare(); }}
