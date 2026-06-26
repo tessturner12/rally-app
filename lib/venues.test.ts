@@ -51,7 +51,7 @@ describe('getNearbyVenues', () => {
     const names = venues.map((v) => v.name)
     expect(names).toContain('A Cafe')
     expect(names).toContain('A Restaurant')
-    expect(redisMock.set).toHaveBeenCalledWith('venues:51.5,-0.1:500', venues, { ex: 12 * 60 * 60 })
+    expect(redisMock.set).toHaveBeenCalledWith('venues:51.5,-0.1:500:bar,cafe,restaurant', venues, { ex: 12 * 60 * 60 })
   })
 
   test('maps Google Places fields onto our Venue shape', async () => {

@@ -5,12 +5,20 @@
 // own).
 
 import { NextResponse } from 'next/server'
-import { getNearbyVenues } from '@/lib/venues'
+import { getNearbyVenues, ALL_VENUE_TYPES } from '@/lib/venues'
+
+// Maps the "for" occasion param to Google Places types.
+const OCCASION_TYPES: Record<string, string[]> = {
+  food: ['restaurant'],
+  drinks: ['bar'],
+  coffee: ['cafe'],
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const latParam = url.searchParams.get('lat')
   const lngParam = url.searchParams.get('lng')
+  const forParam = url.searchParams.get('for')
   const lat = Number(latParam)
   const lng = Number(lngParam)
 
@@ -21,6 +29,7 @@ export async function GET(request: Request) {
     )
   }
 
-  const venues = await getNearbyVenues(lat, lng)
+  const types = (forParam ? OCCASION_TYPES[forParam] : undefined) ?? [...ALL_VENUE_TYPES]
+  const venues = await getNearbyVenues(lat, lng, 500, types)
   return NextResponse.json({ venues }, { status: 200 })
 }

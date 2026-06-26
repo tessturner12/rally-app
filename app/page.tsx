@@ -79,6 +79,8 @@ const HOW_IT_WORKS = [
   },
 ];
 
+const EXAMPLE_TUBE_MODES = new Set(["tube", "dlr", "overground", "elizabeth-line", "national-rail"]);
+
 // Fake journey data for the homepage example card — shows what a real result
 // looks like, with TfL line colours and step-by-step legs.
 const EXAMPLE_PEOPLE = [
@@ -87,9 +89,9 @@ const EXAMPLE_PEOPLE = [
     from: "Brixton",
     mins: 22,
     legs: [
-      { colour: "#9E9E9E", label: "Walk to Brixton (2 min)" },
-      { colour: "#0098D4", label: "Victoria Line to Oxford Circus (14 min, 6 stops)" },
-      { colour: "#9E9E9E", label: "Walk to exit (6 min)" },
+      { colour: "#9E9E9E", mode: "walking", label: "Walk to Brixton (2 min)" },
+      { colour: "#0098D4", mode: "tube", label: "Victoria Line to Oxford Circus (14 min, 6 stops)" },
+      { colour: "#9E9E9E", mode: "walking", label: "Walk to exit (6 min)" },
     ],
   },
   {
@@ -97,10 +99,10 @@ const EXAMPLE_PEOPLE = [
     from: "Shoreditch",
     mins: 24,
     legs: [
-      { colour: "#9E9E9E", label: "Walk to Old Street (4 min)" },
-      { colour: "#000000", label: "Northern Line to Bank (5 min, 2 stops)" },
-      { colour: "#E32017", label: "Central Line to Oxford Circus (11 min, 4 stops)" },
-      { colour: "#9E9E9E", label: "Walk to exit (4 min)" },
+      { colour: "#9E9E9E", mode: "walking", label: "Walk to Old Street (4 min)" },
+      { colour: "#000000", mode: "tube", label: "Northern Line to Bank (5 min, 2 stops)" },
+      { colour: "#E32017", mode: "tube", label: "Central Line to Oxford Circus (11 min, 4 stops)" },
+      { colour: "#9E9E9E", mode: "walking", label: "Walk to exit (4 min)" },
     ],
   },
   {
@@ -108,9 +110,9 @@ const EXAMPLE_PEOPLE = [
     from: "Ealing",
     mins: 26,
     legs: [
-      { colour: "#9E9E9E", label: "Walk to Ealing Broadway (3 min)" },
-      { colour: "#E32017", label: "Central Line to Oxford Circus (20 min, 13 stops)" },
-      { colour: "#9E9E9E", label: "Walk to exit (3 min)" },
+      { colour: "#9E9E9E", mode: "walking", label: "Walk to Ealing Broadway (3 min)" },
+      { colour: "#E32017", mode: "tube", label: "Central Line to Oxford Circus (20 min, 13 stops)" },
+      { colour: "#9E9E9E", mode: "walking", label: "Walk to exit (3 min)" },
     ],
   },
 ];
@@ -153,10 +155,18 @@ const FAQ = [
 
 // Screen 1 of Rally — the landing page. Explains what Rally is, how it
 // works, and answers common questions before someone taps the button.
+const OCCASION_OPTIONS = [
+  { label: "Any — show me everything", value: "all" },
+  { label: "Food / Dinner", value: "food" },
+  { label: "Drinks / Pub", value: "drinks" },
+  { label: "Coffee / Café", value: "coffee" },
+];
+
 export default function Home() {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [occasion, setOccasion] = useState("all");
   // Which FAQ item is currently open — null means all collapsed.
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -169,7 +179,10 @@ export default function Home() {
         throw new Error("Could not start a new Rally");
       }
       const { id } = (await response.json()) as { id: string };
-      router.push(`/session/${id}`);
+      const dest = occasion !== "all"
+        ? `/session/${id}?for=${occasion}`
+        : `/session/${id}`;
+      router.push(dest);
     } catch {
       setError("Something went wrong starting your Rally. Please try again.");
       setIsStarting(false);
@@ -191,81 +204,126 @@ export default function Home() {
           that&apos;s genuinely fair for everyone — based on real tube times, not
           just the map midpoint.
         </p>
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={isStarting}
-          className="w-full max-w-xs rounded-full bg-[#02075d] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-[#01054a] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isStarting ? "Starting..." : "Find somewhere to meet"}
-        </button>
+        <div className="flex w-full max-w-xs flex-col gap-3">
+          <div className="flex flex-col gap-1 text-left">
+            <label htmlFor="occasion" className="text-sm font-medium text-zinc-600">
+              What are you meeting up for?
+            </label>
+            <select
+              id="occasion"
+              value={occasion}
+              onChange={(e) => setOccasion(e.target.value)}
+              className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#02075d]"
+            >
+              {OCCASION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={isStarting}
+            className="w-full cursor-pointer rounded-full bg-[#02075d] px-8 py-4 text-lg font-semibold text-white shadow-md transition-all hover:bg-[#01054a] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isStarting ? "Starting..." : "Find somewhere to meet"}
+          </button>
+        </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
 
-      {/* How it works — 5 numbered steps on a light grey background. */}
-      <section className="flex flex-col gap-6 border-t border-zinc-100 bg-zinc-50 px-6 py-12">
-        <h2 className="text-xl font-bold text-zinc-900">How it works</h2>
-        <ol className="flex flex-col gap-6">
-          {HOW_IT_WORKS.map((step, i) => (
-            <li key={i} className="flex gap-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#02075d] text-sm font-bold text-white">
-                {i + 1}
-              </span>
-              <div className="flex flex-col gap-1">
-                <p className="font-semibold text-zinc-900">{step.title}</p>
-                <p className="text-sm text-zinc-600">{step.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {/* Example + How it works — side by side on wider screens */}
+      <section className="border-t border-zinc-100 px-6 py-12">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
 
-      {/* Mini example — shows what a Rally result looks like with fake data.
-          Helps people understand the output before they start a search. */}
-      <section className="flex flex-col gap-4 border-t border-zinc-100 px-6 py-12">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-zinc-900">Here&apos;s what it looks like</h2>
-          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-500">
-            Example only
-          </span>
-        </div>
-        <ExampleMap />
-        <div className="rounded-xl border-2 border-[#02075d] p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-zinc-900">Oxford Circus</h3>
-            <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
-              ★ BEST
-            </span>
-          </div>
-          <div className="mt-3 flex flex-col gap-2">
-            {EXAMPLE_PEOPLE.map((person) => (
-              <div key={person.name} className="rounded-lg bg-zinc-100 p-3">
-                <p className="text-sm text-zinc-700">
-                  <span className="font-bold text-zinc-900">{person.name}</span>
-                  {" · from "}{person.from}
-                </p>
-                <ul className="mt-2 flex flex-col gap-1">
-                  {person.legs.map((leg, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-zinc-700">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: leg.colour }}
-                      />
-                      {leg.label}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2 text-base font-bold text-zinc-900">{person.mins} mins total</p>
+          {/* Left: example result */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-zinc-900">Here&apos;s what it looks like</h2>
+              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-500">
+                Example only
+              </span>
+            </div>
+            <ExampleMap />
+            <div className="rounded-xl border-2 border-[#02075d] p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-zinc-900">Oxford Circus</h3>
+                <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
+                  ★ BEST
+                </span>
               </div>
-            ))}
+              <div className="mt-3 flex flex-col gap-2">
+                {EXAMPLE_PEOPLE.map((person) => (
+                  <div key={person.name} className="rounded-lg bg-zinc-100 p-3">
+                    <p className="text-sm text-zinc-700">
+                      <span className="font-bold text-zinc-900">{person.name}</span>
+                      {" · from "}{person.from}
+                    </p>
+                    {/* Route preview dots/bars */}
+                    <div className="mt-2 flex items-center gap-1">
+                      {person.legs.map((leg, i) => {
+                        const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
+                        return (
+                          <div key={i} className="flex shrink-0 items-center gap-1">
+                            {isTube ? (
+                              <span className="h-2 w-6 rounded-full" style={{ backgroundColor: leg.colour }} />
+                            ) : (
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: leg.colour }} />
+                            )}
+                            {i < person.legs.length - 1 && (
+                              <span className="text-xs text-zinc-300">›</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {person.legs.map((leg, i) => {
+                        const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
+                        return (
+                          <li key={i} className="flex items-center gap-2 text-sm text-zinc-700">
+                            {isTube ? (
+                              <span className="h-1.5 w-6 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
+                            ) : (
+                              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
+                            )}
+                            {leg.label}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <p className="mt-2 text-base font-bold text-zinc-900">{person.mins} mins total</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 rounded-lg bg-[#eef0fb] px-4 py-3 text-center">
+                <p className="text-xs font-medium uppercase tracking-wide text-[#02075d]">Avg. journey time</p>
+                <p className="text-2xl font-bold text-[#02075d]">24 mins</p>
+              </div>
+              <div className="mt-3 border-t border-zinc-200 pt-3 text-sm text-zinc-600">
+                <span>Longest journey: 26 mins</span>
+              </div>
+            </div>
           </div>
-          <div className="mt-3 rounded-lg bg-[#eef0fb] px-4 py-3 text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-[#02075d]">Avg. journey time</p>
-            <p className="text-2xl font-bold text-[#02075d]">24 mins</p>
+
+          {/* Right: how it works */}
+          <div className="flex flex-col gap-6 rounded-xl bg-zinc-50 p-6">
+            <h2 className="text-xl font-bold text-zinc-900">How it works</h2>
+            <ol className="flex flex-col gap-6">
+              {HOW_IT_WORKS.map((step, i) => (
+                <li key={i} className="flex gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#02075d] text-sm font-bold text-white">
+                    {i + 1}
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-semibold text-zinc-900">{step.title}</p>
+                    <p className="text-sm text-zinc-600">{step.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
-          <div className="mt-3 border-t border-zinc-200 pt-3 text-sm text-zinc-600">
-            <span>Longest journey: 26 mins</span>
-          </div>
+
         </div>
       </section>
 

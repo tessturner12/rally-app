@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LocationsForm, { type DraftRow } from "@/components/LocationsForm";
 import TimePreferenceToggle from "@/components/TimePreferenceToggle";
@@ -19,6 +19,8 @@ const DEFAULT_NEW_ROWS = 2;
 export default function SessionPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const occasion = searchParams.get("for");
 
   const [session, setSession] = useState<Session | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -129,7 +131,10 @@ export default function SessionPage() {
       if (!response.ok) {
         throw new Error(data.error ?? "Could not calculate a Rally point");
       }
-      router.push(`/session/${id}/results`);
+      const resultsUrl = occasion
+        ? `/session/${id}/results?for=${occasion}`
+        : `/session/${id}/results`;
+      router.push(resultsUrl);
     } catch (err) {
       setCalculateError(
         err instanceof Error ? err.message : "Something went wrong"

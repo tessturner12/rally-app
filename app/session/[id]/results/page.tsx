@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import MeetingAreaMap from "@/components/MeetingAreaMap";
 import StationCard from "@/components/StationCard";
@@ -13,6 +13,8 @@ import type { Session } from "@/lib/session";
 // nearby venues. Tapping a card moves the map at the top to match it.
 export default function ResultsPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const occasion = searchParams.get("for") ?? undefined;
   const [session, setSession] = useState<Session | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -122,6 +124,7 @@ export default function ResultsPage() {
             isSelected={index === selectedIndex}
             onSelect={() => setSelectedIndex(index)}
             timePreference={session.timePreference}
+            occasion={occasion}
           />
         ))}
       </div>

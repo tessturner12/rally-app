@@ -28,22 +28,24 @@ type PlacesNearbySearchResponse = {
 
 // The categories we show on the results page. Querying each separately
 // because Google Places' "type" filter only accepts one type per request.
-const VENUE_TYPES = ['restaurant', 'cafe', 'bar']
+export const ALL_VENUE_TYPES = ['restaurant', 'cafe', 'bar'] as const
 const CACHE_TTL_SECONDS = 12 * 60 * 60
 
 export async function getNearbyVenues(
   lat: number,
   lng: number,
-  radius = 500
+  radius = 500,
+  types: string[] = [...ALL_VENUE_TYPES]
 ): Promise<Venue[]> {
-  const cacheKey = `venues:${lat},${lng}:${radius}`
+  const typeKey = [...types].sort().join(',')
+  const cacheKey = `venues:${lat},${lng}:${radius}:${typeKey}`
   const cached = await redis.get<Venue[]>(cacheKey)
   if (cached) {
     return cached
   }
 
   const resultsByType = await Promise.all(
-    VENUE_TYPES.map((type) => fetchVenuesForType(lat, lng, radius, type))
+    types.map((type) => fetchVenuesForType(lat, lng, radius, type))
   )
   const venues = resultsByType.flat()
 
