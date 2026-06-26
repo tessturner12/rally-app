@@ -29,10 +29,10 @@ function toTitleCase(str: string): string {
 }
 
 // Compact preview bar showing the sequence of legs as dots (walk/bus) or
-// coloured pills (tube lines) — gives a visual summary before the leg list.
+// coloured pills (tube lines) — sits inline next to the person's name.
 function RoutePreview({ legs }: { legs: Array<{ lineName?: string; mode: string }> }) {
   return (
-    <div className="flex items-center gap-1 overflow-hidden">
+    <div className="flex min-w-0 items-center gap-1 overflow-hidden">
       {legs.map((leg, i) => {
         const colour = colourForLine(leg.lineName, leg.mode);
         const isTube = TUBE_MODES.has(leg.mode);
@@ -51,40 +51,30 @@ function RoutePreview({ legs }: { legs: Array<{ lineName?: string; mode: string 
   );
 }
 
-// Static Google Maps thumbnail showing the straight-line path from origin to
-// station — gives a quick visual sense of direction before opening the full
-// interactive route.
-function RouteThumbnail({
-  originLat,
-  originLng,
-  destLat,
-  destLng,
-}: {
-  originLat: number;
-  originLng: number;
-  destLat: number;
-  destLng: number;
-}) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!apiKey) return null;
-
-  const src =
-    `https://maps.googleapis.com/maps/api/staticmap` +
-    `?size=160x100` +
-    `&markers=color:0x02075d|${originLat},${originLng}` +
-    `&markers=color:red|${destLat},${destLng}` +
-    `&path=color:0x02075d80|weight:3|${originLat},${originLng}|${destLat},${destLng}` +
-    `&key=${apiKey}`;
-
+// Generic decorative tube-map illustration — purely visual, no API calls.
+function TubeMapDecoration() {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt="Route map"
-      width={160}
-      height={100}
-      className="rounded-lg object-cover"
-    />
+    <svg width="140" height="90" viewBox="0 0 140 90" className="shrink-0 rounded-lg">
+      {/* Map background */}
+      <rect width="140" height="90" fill="#f4f4f5" rx="8" />
+      {/* Street grid, very light */}
+      <line x1="0" y1="45" x2="140" y2="45" stroke="#e4e4e7" strokeWidth="5" />
+      <line x1="70" y1="0" x2="70" y2="90" stroke="#e4e4e7" strokeWidth="5" />
+      <line x1="0" y1="22" x2="140" y2="22" stroke="#e4e4e7" strokeWidth="3" />
+      <line x1="35" y1="0" x2="35" y2="90" stroke="#e4e4e7" strokeWidth="3" />
+      <line x1="105" y1="0" x2="105" y2="90" stroke="#e4e4e7" strokeWidth="3" />
+      {/* Victoria line (blue diagonal) */}
+      <line x1="18" y1="78" x2="122" y2="14" stroke="#0098D4" strokeWidth="4" strokeLinecap="round" />
+      {/* Central line (red horizontal) */}
+      <line x1="10" y1="45" x2="130" y2="45" stroke="#E32017" strokeWidth="4" strokeLinecap="round" />
+      {/* Station markers — small circles, white with coloured border */}
+      <circle cx="42" cy="62" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
+      <circle cx="42" cy="62" r="2" fill="#02075d" />
+      <circle cx="98" cy="28" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
+      <circle cx="98" cy="28" r="2" fill="#02075d" />
+      <circle cx="70" cy="45" r="5" fill="white" stroke="#E32017" strokeWidth="2" />
+      <circle cx="70" cy="45" r="2" fill="#E32017" />
+    </svg>
   );
 }
 
@@ -162,12 +152,15 @@ export default function StationCard({
       <div className="flex flex-col gap-3">
         {station.journeyTimes.map((journey, index) => (
           <div key={index} className="rounded-lg bg-zinc-100 p-3">
-            <p className="text-sm font-semibold text-zinc-800">
-              {journey.personName || `Person ${index + 1}`}
-            </p>
-            <RoutePreview legs={journey.legs} />
+            {/* Name + route preview on the same line */}
+            <div className="flex items-center gap-3">
+              <p className="shrink-0 text-sm font-semibold text-zinc-800">
+                {journey.personName || `Person ${index + 1}`}
+              </p>
+              <RoutePreview legs={journey.legs} />
+            </div>
 
-            {/* Journey legs on the left, map thumbnail + Show route on the right */}
+            {/* Journey legs on the left, decorative map + Show route on the right */}
             <div className="mt-2 flex gap-3">
               <ul className="flex flex-1 flex-col gap-1.5">
                 {journey.legs.map((leg, legIndex) => {
@@ -189,17 +182,12 @@ export default function StationCard({
                 })}
               </ul>
 
-              {/* Map thumbnail + Show route */}
+              {/* Decorative map + Show route button */}
               <div
                 className="flex shrink-0 flex-col items-center gap-2"
                 onClick={(e) => e.stopPropagation()}
               >
-                <RouteThumbnail
-                  originLat={journey.originLat}
-                  originLng={journey.originLng}
-                  destLat={station.lat}
-                  destLng={station.lng}
-                />
+                <TubeMapDecoration />
                 <button
                   type="button"
                   onClick={() => setMapForPersonIndex(index)}
