@@ -79,6 +79,42 @@ const HOW_IT_WORKS = [
   },
 ];
 
+// Fake journey data for the homepage example card — shows what a real result
+// looks like, with TfL line colours and step-by-step legs.
+const EXAMPLE_PEOPLE = [
+  {
+    name: "Tess",
+    from: "Brixton",
+    mins: 22,
+    legs: [
+      { colour: "#9E9E9E", label: "Walk to Brixton (2 min)" },
+      { colour: "#0098D4", label: "Victoria Line to Oxford Circus (14 min, 6 stops)" },
+      { colour: "#9E9E9E", label: "Walk to exit (6 min)" },
+    ],
+  },
+  {
+    name: "Sam",
+    from: "Shoreditch",
+    mins: 24,
+    legs: [
+      { colour: "#9E9E9E", label: "Walk to Old Street (4 min)" },
+      { colour: "#000000", label: "Northern Line to Bank (5 min, 2 stops)" },
+      { colour: "#E32017", label: "Central Line to Oxford Circus (11 min, 4 stops)" },
+      { colour: "#9E9E9E", label: "Walk to exit (4 min)" },
+    ],
+  },
+  {
+    name: "Jo",
+    from: "Ealing",
+    mins: 26,
+    legs: [
+      { colour: "#9E9E9E", label: "Walk to Ealing Broadway (3 min)" },
+      { colour: "#E32017", label: "Central Line to Oxford Circus (20 min, 13 stops)" },
+      { colour: "#9E9E9E", label: "Walk to exit (3 min)" },
+    ],
+  },
+];
+
 // FAQ content — question + answer pairs for the accordion.
 const FAQ = [
   {
@@ -202,18 +238,24 @@ export default function Home() {
             </span>
           </div>
           <div className="mt-3 flex flex-col gap-2">
-            {[
-              { name: "Tess", from: "Brixton", mins: 22 },
-              { name: "Sam", from: "Shoreditch", mins: 24 },
-              { name: "Jo", from: "Ealing", mins: 26 },
-            ].map((person) => (
+            {EXAMPLE_PEOPLE.map((person) => (
               <div key={person.name} className="rounded-lg bg-zinc-100 p-3">
-                <p className="text-sm font-semibold text-zinc-800">
-                  {person.name} · from {person.from}
+                <p className="text-sm text-zinc-700">
+                  <span className="font-bold text-zinc-900">{person.name}</span>
+                  {" · from "}{person.from}
                 </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-base font-bold text-zinc-900">{person.mins} mins total</span>
-                </div>
+                <ul className="mt-2 flex flex-col gap-1">
+                  {person.legs.map((leg, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-zinc-700">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: leg.colour }}
+                      />
+                      {leg.label}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-base font-bold text-zinc-900">{person.mins} mins total</p>
               </div>
             ))}
           </div>
