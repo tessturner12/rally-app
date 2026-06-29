@@ -177,43 +177,66 @@ export default function Home() {
               <div className="mt-3 flex flex-col gap-2">
                 {EXAMPLE_PEOPLE.map((person) => (
                   <div key={person.name} className="rounded-lg bg-zinc-100 p-3">
-                    <p className="text-sm text-zinc-700">
-                      <span className="font-bold text-zinc-900">{person.name}</span>
-                      {" · from "}{person.from}
-                    </p>
-                    {/* Route preview dots/bars */}
-                    <div className="mt-2 flex items-center gap-1">
-                      {person.legs.map((leg, i) => {
-                        const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
-                        return (
-                          <div key={i} className="flex shrink-0 items-center gap-1">
-                            {isTube ? (
-                              <span className="h-2 w-6 rounded-full" style={{ backgroundColor: leg.colour }} />
-                            ) : (
-                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: leg.colour }} />
-                            )}
-                            {i < person.legs.length - 1 && (
-                              <span className="text-xs text-zinc-300">›</span>
-                            )}
-                          </div>
-                        );
-                      })}
+                    {/* Name + route preview inline — same layout as the real results page */}
+                    <div className="flex items-center gap-3">
+                      <p className="shrink-0 text-sm font-semibold text-zinc-800">{person.name}</p>
+                      <div className="flex min-w-0 items-center gap-1 overflow-hidden">
+                        {person.legs.map((leg, i) => {
+                          const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
+                          return (
+                            <div key={i} className="flex shrink-0 items-center gap-1">
+                              {isTube ? (
+                                <span className="h-2 w-8 rounded-full" style={{ backgroundColor: leg.colour }} />
+                              ) : (
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: leg.colour }} />
+                              )}
+                              {i < person.legs.length - 1 && (
+                                <span className="text-xs text-zinc-300">›</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <ul className="mt-2 flex flex-col gap-1">
-                      {person.legs.map((leg, i) => {
-                        const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
-                        return (
-                          <li key={i} className="flex items-center gap-2 text-sm text-zinc-700">
-                            {isTube ? (
-                              <span className="h-1.5 w-6 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
-                            ) : (
-                              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
-                            )}
-                            {leg.label}
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    {/* Legs on the left, decorative tube map + button on the right */}
+                    <div className="mt-2 flex gap-3">
+                      <ul className="flex flex-1 flex-col gap-1.5">
+                        {person.legs.map((leg, i) => {
+                          const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
+                          return (
+                            <li key={i} className="flex items-center gap-2 text-sm text-zinc-700">
+                              {isTube ? (
+                                <span className="h-1.5 w-6 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
+                              ) : (
+                                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
+                              )}
+                              {leg.label}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="flex shrink-0 flex-col items-center gap-2">
+                        <svg width="140" height="90" viewBox="0 0 140 90" className="shrink-0 rounded-lg">
+                          <rect width="140" height="90" fill="#f4f4f5" rx="8" />
+                          <line x1="0" y1="45" x2="140" y2="45" stroke="#e4e4e7" strokeWidth="5" />
+                          <line x1="70" y1="0" x2="70" y2="90" stroke="#e4e4e7" strokeWidth="5" />
+                          <line x1="0" y1="22" x2="140" y2="22" stroke="#e4e4e7" strokeWidth="3" />
+                          <line x1="35" y1="0" x2="35" y2="90" stroke="#e4e4e7" strokeWidth="3" />
+                          <line x1="105" y1="0" x2="105" y2="90" stroke="#e4e4e7" strokeWidth="3" />
+                          <line x1="18" y1="78" x2="122" y2="14" stroke="#0098D4" strokeWidth="4" strokeLinecap="round" />
+                          <line x1="10" y1="45" x2="130" y2="45" stroke="#E32017" strokeWidth="4" strokeLinecap="round" />
+                          <circle cx="42" cy="62" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
+                          <circle cx="42" cy="62" r="2" fill="#192841" />
+                          <circle cx="98" cy="28" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
+                          <circle cx="98" cy="28" r="2" fill="#192841" />
+                          <circle cx="70" cy="45" r="5" fill="white" stroke="#E32017" strokeWidth="2" />
+                          <circle cx="70" cy="45" r="2" fill="#E32017" />
+                        </svg>
+                        <span className="w-full rounded-full bg-zinc-300 px-3 py-1.5 text-center text-xs font-semibold text-zinc-500">
+                          Show route
+                        </span>
+                      </div>
+                    </div>
                     <p className="mt-2 text-base font-bold text-zinc-900">{person.mins} mins total</p>
                   </div>
                 ))}
