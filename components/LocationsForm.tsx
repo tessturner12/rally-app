@@ -30,8 +30,12 @@ type LocationsFormProps = {
 // Point" is pressed.
 export default function LocationsForm({ rows, onChange, maxRows, disabled }: LocationsFormProps) {
   function updateRow(key: string, field: "name" | "input", value: string) {
+    const processed =
+      field === "name" && value.length > 0
+        ? value.charAt(0).toUpperCase() + value.slice(1)
+        : value;
     onChange(
-      rows.map((row) => (row.key === key ? { ...row, [field]: value, error: undefined } : row))
+      rows.map((row) => (row.key === key ? { ...row, [field]: processed, error: undefined } : row))
     );
   }
 
@@ -129,6 +133,7 @@ function LocationRowFields({
         value={row.name}
         onChange={(event) => onChangeName(event.target.value)}
         placeholder="Name (optional)"
+        autoCapitalize="words"
         className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-base"
       />
       <input
