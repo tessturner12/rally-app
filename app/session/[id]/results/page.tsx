@@ -62,7 +62,7 @@ export default function ResultsPage() {
         <p className="text-lg text-zinc-700">
           This Rally has expired or doesn&apos;t exist.
         </p>
-        <Link href="/" className="font-medium text-[#02075d] underline">
+        <Link href="/" className="font-medium text-[#192841] underline">
           Start a new one
         </Link>
       </main>
@@ -85,7 +85,7 @@ export default function ResultsPage() {
         </p>
         <Link
           href={`/session/${id}`}
-          className="font-medium text-[#02075d] underline"
+          className="font-medium text-[#192841] underline"
         >
           Add locations and calculate
         </Link>
@@ -99,11 +99,11 @@ export default function ResultsPage() {
   return (
     <main className="flex flex-1 flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-bold text-[#02075d]">Suggested Meeting Points</h1>
+        <h1 className="text-2xl font-bold text-[#192841]">Suggested Meeting Points</h1>
         <button
           type="button"
           onClick={handleShare}
-          className="mx-auto rounded-full border border-[#02075d] px-4 py-1.5 text-sm font-medium text-[#02075d]"
+          className="mx-auto rounded-full border border-[#192841] px-4 py-1.5 text-sm font-medium text-[#192841]"
         >
           {linkCopied ? "Link copied!" : "Share these results"}
         </button>

@@ -37,10 +37,10 @@ export default function MeetingAreaMap({ lat, lng, label }: MeetingAreaMapProps)
       // walk — so it's clear which area the suggestion covers, not just
       // a single pin on a street corner.
       circle = new googleMaps.maps.Circle({
-        strokeColor: "#02075d",
+        strokeColor: "#192841",
         strokeOpacity: 0.5,
         strokeWeight: 2,
-        fillColor: "#02075d",
+        fillColor: "#192841",
         fillOpacity: 0.1,
         map,
         center: { lat, lng },

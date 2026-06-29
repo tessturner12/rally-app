@@ -12,6 +12,7 @@ const OCCASION_TYPES: Record<string, string[]> = {
   food: ['restaurant'],
   drinks: ['bar'],
   coffee: ['cafe'],
+  walks: ['park'],
 }
 
 export async function GET(request: Request) {

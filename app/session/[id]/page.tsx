@@ -215,7 +215,7 @@ export default function SessionPage() {
         <p className="text-lg text-zinc-700">
           This Rally has expired or doesn&apos;t exist.
         </p>
-        <Link href="/" className="font-medium text-[#02075d] underline">
+        <Link href="/" className="font-medium text-[#192841] underline">
           Start a new one
         </Link>
       </main>
@@ -253,7 +253,7 @@ export default function SessionPage() {
   return (
     <main className="flex flex-1 flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-2xl font-bold text-[#02075d]">Rally</h1>
+        <h1 className="text-2xl font-bold text-[#192841]">Rally</h1>
         <p className="text-sm text-zinc-600">
           Add where everyone&apos;s coming from ({savedCount}/{MAX_LOCATIONS})
         </p>
@@ -302,12 +302,13 @@ export default function SessionPage() {
         <label className="text-sm font-medium text-zinc-700">
           What are you meeting up for?
         </label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="flex flex-wrap gap-2">
           {[
             { label: "Anything", value: "all" },
-            { label: "Food", value: "food" },
-            { label: "Drinks", value: "drinks" },
-            { label: "Coffee", value: "coffee" },
+            { label: "🍽 Food", value: "food" },
+            { label: "🍺 Drinks", value: "drinks" },
+            { label: "☕ Coffee", value: "coffee" },
+            { label: "🌳 Parks", value: "walks" },
           ].map((opt) => (
             <button
               key={opt.value}
@@ -315,8 +316,8 @@ export default function SessionPage() {
               onClick={() => setOccasion(opt.value)}
               className={`rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
                 occasion === opt.value
-                  ? "border-[#02075d] bg-[#02075d] text-white"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-[#02075d] hover:text-[#02075d]"
+                  ? "border-[#192841] bg-[#192841] text-white"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-[#192841] hover:text-[#192841]"
               }`}
             >
               {opt.label}
@@ -330,7 +331,7 @@ export default function SessionPage() {
           type="button"
           onClick={handleFindRallyPoint}
           disabled={!canSubmit || isSavingRows}
-          className="w-full rounded-full bg-[#02075d] px-8 py-4 text-lg font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-full bg-[#192841] px-8 py-4 text-lg font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSavingRows ? "Saving..." : "Find Rally Point"}
         </button>
@@ -351,7 +352,7 @@ export default function SessionPage() {
         <button
           type="button"
           onClick={handleCopyLink}
-          className="text-sm font-medium text-blue-800 underline"
+          className="text-sm font-medium text-[#192841] underline"
         >
           {linkCopied ? "Link copied!" : "Copy share link"}
         </button>

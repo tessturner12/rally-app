@@ -20,6 +20,7 @@ const VENUE_FILTERS = [
   { label: "🍽 Food", value: "food" },
   { label: "☕ Coffee", value: "coffee" },
   { label: "🍺 Drinks", value: "drinks" },
+  { label: "🌳 Parks", value: "walks" },
 ];
 
 const TUBE_MODES = new Set(["tube", "dlr", "overground", "elizabeth-line", "national-rail"]);
@@ -69,9 +70,9 @@ function TubeMapDecoration() {
       <line x1="10" y1="45" x2="130" y2="45" stroke="#E32017" strokeWidth="4" strokeLinecap="round" />
       {/* Station markers — small circles, white with coloured border */}
       <circle cx="42" cy="62" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
-      <circle cx="42" cy="62" r="2" fill="#02075d" />
+      <circle cx="42" cy="62" r="2" fill="#192841" />
       <circle cx="98" cy="28" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
-      <circle cx="98" cy="28" r="2" fill="#02075d" />
+      <circle cx="98" cy="28" r="2" fill="#192841" />
       <circle cx="70" cy="45" r="5" fill="white" stroke="#E32017" strokeWidth="2" />
       <circle cx="70" cy="45" r="2" fill="#E32017" />
     </svg>
@@ -137,7 +138,7 @@ export default function StationCard({
     <div
       onClick={onSelect}
       className={`flex flex-col gap-4 rounded-xl border-2 p-4 ${
-        isSelected ? "border-[#02075d]" : "border-zinc-200"
+        isSelected ? "border-[#192841]" : "border-zinc-200"
       }`}
     >
       <div className="flex items-center justify-between">
@@ -191,7 +192,7 @@ export default function StationCard({
                 <button
                   type="button"
                   onClick={() => setMapForPersonIndex(index)}
-                  className="w-full cursor-pointer rounded-full bg-[#02075d] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#01054a]"
+                  className="w-full cursor-pointer rounded-full bg-[#192841] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0f1a2b]"
                 >
                   Show route
                 </button>
@@ -203,9 +204,9 @@ export default function StationCard({
         ))}
       </div>
 
-      <div className="rounded-lg bg-[#eef0fb] px-4 py-3 text-center">
-        <p className="text-xs font-medium uppercase tracking-wide text-[#02075d]">Avg. journey time</p>
-        <p className="text-2xl font-bold text-[#02075d]">{station.averageTime} mins</p>
+      <div className="rounded-lg bg-[#e9edf5] px-4 py-3 text-center">
+        <p className="text-xs font-medium uppercase tracking-wide text-[#192841]">Avg. journey time</p>
+        <p className="text-2xl font-bold text-[#192841]">{station.averageTime} mins</p>
       </div>
 
       <div className="flex justify-between border-t border-zinc-200 pt-3 text-sm text-zinc-600">
@@ -225,7 +226,7 @@ export default function StationCard({
 
         {/* Filter buttons — only visible once venues have been fetched */}
         {venues !== null && (
-          <div className="mt-2 grid grid-cols-4 gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             {VENUE_FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -233,8 +234,8 @@ export default function StationCard({
                 onClick={() => handleFilterChange(f.value)}
                 className={`rounded-full border px-2 py-1.5 text-xs font-medium transition-colors ${
                   venueFilter === f.value
-                    ? "border-[#02075d] bg-[#02075d] text-white"
-                    : "border-zinc-200 bg-white text-zinc-600 hover:border-[#02075d] hover:text-[#02075d]"
+                    ? "border-[#192841] bg-[#192841] text-white"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-[#192841] hover:text-[#192841]"
                 }`}
               >
                 {f.label}
@@ -264,7 +265,7 @@ export default function StationCard({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); handleShare(); }}
-        className="w-full rounded-full border border-[#02075d] px-4 py-2.5 text-sm font-medium text-[#02075d] hover:bg-[#eef0fb]"
+        className="w-full rounded-full border border-[#192841] px-4 py-2.5 text-sm font-medium text-[#192841] hover:bg-[#e9edf5]"
       >
         {shareCopied ? "Link copied!" : "Share these results"}
       </button>

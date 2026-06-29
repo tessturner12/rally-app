@@ -1,58 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loadGoogleMaps } from "@/lib/googleMaps";
-
-// Static map centred on Oxford Circus, used purely as a demo in the
-// "Here's what it looks like" section on the homepage.
-function ExampleMap() {
-  const mapDivRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let marker: google.maps.Marker | undefined;
-    let circle: google.maps.Circle | undefined;
-
-    loadGoogleMaps()
-      .then((googleMaps) => {
-        if (!mapDivRef.current) return;
-        const lat = 51.5154;
-        const lng = -0.1419;
-        const map = new googleMaps.maps.Map(mapDivRef.current, {
-          center: { lat, lng },
-          zoom: 15,
-          disableDefaultUI: true,
-        });
-        marker = new googleMaps.maps.Marker({ position: { lat, lng }, map, title: "Oxford Circus" });
-        circle = new googleMaps.maps.Circle({
-          strokeColor: "#02075d",
-          strokeOpacity: 0.5,
-          strokeWeight: 2,
-          fillColor: "#02075d",
-          fillOpacity: 0.1,
-          map,
-          center: { lat, lng },
-          radius: 400,
-        });
-      })
-      .catch(() => {
-        // If Maps fails to load, the grey placeholder div remains — that's fine.
-      });
-
-    return () => {
-      marker?.setMap(null);
-      circle?.setMap(null);
-    };
-  }, []);
-
-  return (
-    <div
-      ref={mapDivRef}
-      className="h-48 w-full rounded-lg bg-zinc-200"
-      aria-label="Example map showing Oxford Circus"
-    />
-  );
-}
+import MeetingAreaMap from "@/components/MeetingAreaMap";
 
 // The steps that appear in the "How it works" section — kept as a constant
 // so the JSX below stays readable.
@@ -75,7 +25,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Find somewhere to go",
-    body: "Each suggested station comes with nearby pubs, cafés, and restaurants to make the choice easy.",
+    body: "Each suggested station comes with nearby restaurants, cafés, bars, and parks — filter by what you're in the mood for.",
   },
 ];
 
@@ -183,7 +133,7 @@ export default function Home() {
       {/* Hero — the first thing someone sees. One clear action. */}
       <section className="flex flex-col items-center gap-6 px-6 py-16 text-center">
         <div className="flex flex-col gap-2">
-          <h1 className="text-5xl font-bold tracking-tight text-[#02075d]">
+          <h1 className="text-5xl font-bold tracking-tight text-[#192841]">
             Rally
           </h1>
           <p className="text-lg font-medium text-zinc-500">Find the fair spot</p>
@@ -197,7 +147,7 @@ export default function Home() {
           type="button"
           onClick={handleStart}
           disabled={isStarting}
-          className="w-full max-w-xs cursor-pointer rounded-full bg-[#02075d] px-8 py-4 text-lg font-semibold text-white shadow-md transition-all hover:bg-[#01054a] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full max-w-xs cursor-pointer rounded-full bg-[#192841] px-8 py-4 text-lg font-semibold text-white shadow-md transition-all hover:bg-[#0f1a2b] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isStarting ? "Starting..." : "Find somewhere to meet"}
         </button>
@@ -216,8 +166,8 @@ export default function Home() {
                 Example only
               </span>
             </div>
-            <ExampleMap />
-            <div className="rounded-xl border-2 border-[#02075d] p-4">
+            <MeetingAreaMap lat={51.5154} lng={-0.1419} label="Oxford Circus" />
+            <div className="rounded-xl border-2 border-[#192841] p-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-zinc-900">Oxford Circus</h3>
                 <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
@@ -268,9 +218,9 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <div className="mt-3 rounded-lg bg-[#eef0fb] px-4 py-3 text-center">
-                <p className="text-xs font-medium uppercase tracking-wide text-[#02075d]">Avg. journey time</p>
-                <p className="text-2xl font-bold text-[#02075d]">24 mins</p>
+              <div className="mt-3 rounded-lg bg-[#e9edf5] px-4 py-3 text-center">
+                <p className="text-xs font-medium uppercase tracking-wide text-[#192841]">Avg. journey time</p>
+                <p className="text-2xl font-bold text-[#192841]">24 mins</p>
               </div>
               <div className="mt-3 border-t border-zinc-200 pt-3 text-sm text-zinc-600">
                 <span>Longest journey: 26 mins</span>
@@ -284,7 +234,7 @@ export default function Home() {
             <ol className="flex flex-col gap-6">
               {HOW_IT_WORKS.map((step, i) => (
                 <li key={i} className="flex gap-4">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#02075d] text-sm font-bold text-white">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#192841] text-sm font-bold text-white">
                     {i + 1}
                   </span>
                   <div className="flex flex-col gap-1">
