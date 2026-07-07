@@ -156,97 +156,79 @@ export default function Home() {
 
       {/* Example + How it works — side by side on wider screens */}
       <section className="border-t border-zinc-100 px-6 py-12">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-2">
 
-          {/* Left: example result */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-zinc-900">Here&apos;s what it looks like</h2>
-              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-500">
-                Example only
-              </span>
-            </div>
-            <MeetingAreaMap lat={51.5154} lng={-0.1419} label="Oxford Circus" />
-            <div className="rounded-xl border-2 border-[#192841] p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-zinc-900">Oxford Circus</h3>
-                <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-zinc-900">
-                  ★ BEST
-                </span>
-              </div>
-              <div className="mt-3 flex flex-col gap-2">
-                {EXAMPLE_PEOPLE.map((person) => (
-                  <div key={person.name} className="rounded-lg bg-zinc-100 p-3">
-                    {/* Name + route preview inline — same layout as the real results page */}
-                    <div className="flex items-center gap-3">
-                      <p className="shrink-0 text-sm font-semibold text-zinc-800">{person.name}</p>
-                      <div className="flex min-w-0 items-center gap-1 overflow-hidden">
-                        {person.legs.map((leg, i) => {
-                          const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
-                          return (
-                            <div key={i} className="flex shrink-0 items-center gap-1">
-                              {isTube ? (
-                                <span className="h-2 w-8 rounded-full" style={{ backgroundColor: leg.colour }} />
-                              ) : (
-                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: leg.colour }} />
-                              )}
-                              {i < person.legs.length - 1 && (
-                                <span className="text-xs text-zinc-300">›</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {/* Legs on the left, decorative tube map + button on the right */}
-                    <div className="mt-2 flex gap-3">
-                      <ul className="flex flex-1 flex-col gap-1.5">
-                        {person.legs.map((leg, i) => {
-                          const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
-                          return (
-                            <li key={i} className="flex items-center gap-2 text-sm text-zinc-700">
-                              {isTube ? (
-                                <span className="h-1.5 w-6 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
-                              ) : (
-                                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: leg.colour }} />
-                              )}
-                              {leg.label}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      <div className="flex shrink-0 flex-col items-center gap-2">
-                        <svg width="140" height="90" viewBox="0 0 140 90" className="shrink-0 rounded-lg">
-                          <rect width="140" height="90" fill="#f4f4f5" rx="8" />
-                          <line x1="0" y1="45" x2="140" y2="45" stroke="#e4e4e7" strokeWidth="5" />
-                          <line x1="70" y1="0" x2="70" y2="90" stroke="#e4e4e7" strokeWidth="5" />
-                          <line x1="0" y1="22" x2="140" y2="22" stroke="#e4e4e7" strokeWidth="3" />
-                          <line x1="35" y1="0" x2="35" y2="90" stroke="#e4e4e7" strokeWidth="3" />
-                          <line x1="105" y1="0" x2="105" y2="90" stroke="#e4e4e7" strokeWidth="3" />
-                          <line x1="18" y1="78" x2="122" y2="14" stroke="#0098D4" strokeWidth="4" strokeLinecap="round" />
-                          <line x1="10" y1="45" x2="130" y2="45" stroke="#E32017" strokeWidth="4" strokeLinecap="round" />
-                          <circle cx="42" cy="62" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
-                          <circle cx="42" cy="62" r="2" fill="#192841" />
-                          <circle cx="98" cy="28" r="5" fill="white" stroke="#0098D4" strokeWidth="2" />
-                          <circle cx="98" cy="28" r="2" fill="#192841" />
-                          <circle cx="70" cy="45" r="5" fill="white" stroke="#E32017" strokeWidth="2" />
-                          <circle cx="70" cy="45" r="2" fill="#E32017" />
-                        </svg>
-                        <span className="w-full rounded-full bg-zinc-300 px-3 py-1.5 text-center text-xs font-semibold text-zinc-500">
-                          Show route
-                        </span>
-                      </div>
-                    </div>
-                    <p className="mt-2 text-base font-bold text-zinc-900">{person.mins} mins total</p>
+          {/* Left: phone frame showing an example result */}
+          <div className="flex flex-col items-center">
+            {/* Amber tag sits above the phone, overlapping the bezel slightly */}
+            <span className="relative z-10 -mb-3.5 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-widest text-zinc-900 shadow-md">
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-900 opacity-40" />
+              Example
+            </span>
+
+            {/* Phone shell */}
+            <div className="w-[268px] rounded-[44px] bg-[#1c1c1e] p-[10px] shadow-[0_20px_60px_rgba(0,0,0,0.22),0_4px_16px_rgba(0,0,0,0.12)]">
+              {/* Screen */}
+              <div className="overflow-hidden rounded-[36px] bg-white">
+                {/* Dynamic island */}
+                <div className="flex justify-center bg-white pb-1 pt-2.5">
+                  <div className="h-[26px] w-[88px] rounded-full bg-[#1c1c1e]" />
+                </div>
+
+                {/* Screen content */}
+                <div className="px-3">
+                  {/* Map clipped to a phone-friendly height */}
+                  <div className="mb-2.5 h-[120px] overflow-hidden rounded-lg">
+                    <MeetingAreaMap lat={51.5154} lng={-0.1419} label="Oxford Circus" />
                   </div>
-                ))}
-              </div>
-              <div className="mt-3 rounded-lg bg-[#e9edf5] px-4 py-3 text-center">
-                <p className="text-xs font-medium uppercase tracking-wide text-[#192841]">Avg. journey time</p>
-                <p className="text-2xl font-bold text-[#192841]">24 mins</p>
-              </div>
-              <div className="mt-3 border-t border-zinc-200 pt-3 text-sm text-zinc-600">
-                <span>Longest journey: 26 mins</span>
+
+                  {/* Station card — compact version for the small screen */}
+                  <div className="rounded-xl border-2 border-[#192841] p-2.5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-zinc-900">Oxford Circus</h3>
+                      <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-zinc-900">
+                        ★ BEST
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      {EXAMPLE_PEOPLE.map((person) => (
+                        <div key={person.name} className="rounded-lg bg-zinc-100 p-2">
+                          {/* Name + route preview + time all on one row */}
+                          <div className="flex items-center gap-2">
+                            <p className="shrink-0 text-xs font-semibold text-zinc-800">{person.name}</p>
+                            <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+                              {person.legs.map((leg, i) => {
+                                const isTube = EXAMPLE_TUBE_MODES.has(leg.mode);
+                                return (
+                                  <div key={i} className="flex shrink-0 items-center gap-1">
+                                    {isTube ? (
+                                      <span className="h-1.5 w-5 rounded-full" style={{ backgroundColor: leg.colour }} />
+                                    ) : (
+                                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: leg.colour }} />
+                                    )}
+                                    {i < person.legs.length - 1 && (
+                                      <span className="text-[10px] text-zinc-300">›</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p className="ml-auto shrink-0 text-xs font-bold text-zinc-700">{person.mins}m</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 rounded-lg bg-[#e9edf5] px-3 py-2 text-center">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-[#192841]">Avg. journey time</p>
+                      <p className="text-xl font-bold text-[#192841]">24 mins</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Home indicator bar */}
+                <div className="flex justify-center py-3">
+                  <div className="h-1 w-24 rounded-full bg-zinc-300" />
+                </div>
               </div>
             </div>
           </div>

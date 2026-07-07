@@ -5,6 +5,8 @@ Status snapshot for picking up work on any machine. Update this at the end of ea
 ## Current status
 UI polish pass complete. Brand colour is now `#192841` (navy) throughout. App always renders in light mode regardless of device setting. Homepage example uses the real `MeetingAreaMap` component (same as results page). Parks/walks added as a fifth venue option across the occasion picker, venue filter buttons, and venues API.
 
+**Uncommitted local change:** `app/page.tsx` — homepage example section replaced with a phone frame mockup. The flat card + map are now wrapped in a CSS phone shell (dark bezel, dynamic island, home bar) with an amber "Example" badge above it. Compact station card inside. Looks good locally at localhost:3000, not yet pushed to Vercel.
+
 ## Build order checklist
 - [x] Scaffold Next.js + TypeScript + Tailwind, set up folder structure
 - [x] `/lib/candidates.ts` — hardcoded station list with lat/lng (zones 1–3, 30 stations, coordinates pulled live from TfL's StopPoint Search)
