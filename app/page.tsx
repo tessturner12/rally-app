@@ -156,30 +156,38 @@ export default function Home() {
 
       {/* Example + How it works — side by side on wider screens */}
       <section className="border-t border-zinc-100 px-6 py-12">
-        <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-2">
+        {/* On wider screens, the left column only takes up as much width as the
+            phone needs ("auto"), and "How it works" stretches to fill the rest —
+            since the phone is tall and narrow, this avoids wasting a big empty
+            gap next to it. */}
+        <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-[auto_1fr]">
 
-          {/* Left: phone frame showing an example result */}
-          <div className="flex flex-col items-center">
+          {/* Left: phone frame showing an example result. Extra left padding on
+              wider screens gives it some breathing room from the edge of the
+              section, now that this column has shrunk to fit the phone. */}
+          <div className="flex flex-col items-center md:pl-6">
             {/* Amber tag sits above the phone, overlapping the bezel slightly */}
             <span className="relative z-10 -mb-3.5 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-widest text-zinc-900 shadow-md">
               <span className="h-1.5 w-1.5 rounded-full bg-zinc-900 opacity-40" />
               Example
             </span>
 
-            {/* Phone shell */}
-            <div className="w-[268px] rounded-[44px] bg-[#1c1c1e] p-[10px] shadow-[0_20px_60px_rgba(0,0,0,0.22),0_4px_16px_rgba(0,0,0,0.12)]">
+            {/* Phone shell — sized a bit bigger than a real phone so the example is easy to read at a glance */}
+            <div className="w-[320px] rounded-[52px] bg-[#1c1c1e] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.22),0_4px_16px_rgba(0,0,0,0.12)]">
               {/* Screen */}
-              <div className="overflow-hidden rounded-[36px] bg-white">
+              <div className="overflow-hidden rounded-[40px] bg-white">
                 {/* Dynamic island */}
-                <div className="flex justify-center bg-white pb-1 pt-2.5">
-                  <div className="h-[26px] w-[88px] rounded-full bg-[#1c1c1e]" />
+                <div className="flex justify-center bg-white pb-1.5 pt-3">
+                  <div className="h-[30px] w-[100px] rounded-full bg-[#1c1c1e]" />
                 </div>
 
                 {/* Screen content */}
-                <div className="px-3">
-                  {/* Map clipped to a phone-friendly height */}
-                  <div className="mb-2.5 h-[120px] overflow-hidden rounded-lg">
-                    <MeetingAreaMap lat={51.5154} lng={-0.1419} label="Oxford Circus" />
+                <div className="px-3.5">
+                  {/* Map clipped to a phone-friendly height. It's just a picture here —
+                      not interactive — and zoomed out a bit further than the real map
+                      on the results page so more of the surrounding streets are visible. */}
+                  <div className="mb-3 h-[150px] overflow-hidden rounded-lg">
+                    <MeetingAreaMap lat={51.5154} lng={-0.1419} label="Oxford Circus" zoom={13} interactive={false} />
                   </div>
 
                   {/* Station card — compact version for the small screen */}
