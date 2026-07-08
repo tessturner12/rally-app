@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 
-// Time options every 15 minutes across the full day, generated once at
-// module load so the component doesn't rebuild the list on every render.
+// Time options every 15 minutes across the full day, starting at 6am and
+// wrapping round to end at 5:45am — most people planning to meet up aren't
+// picking a time in the middle of the night, so this keeps the realistic
+// hours at the top of the list instead of buried after a scroll past
+// midnight. Generated once at module load so the component doesn't rebuild
+// the list on every render.
 const TIME_OPTIONS: { value: string; label: string }[] = [];
-for (let hour = 0; hour <= 23; hour++) {
+const DAY_START_HOUR = 6;
+for (let i = 0; i < 24; i++) {
+  const hour = (DAY_START_HOUR + i) % 24;
   for (const min of [0, 15, 30, 45]) {
     const hh = String(hour).padStart(2, "0");
     const mm = String(min).padStart(2, "0");

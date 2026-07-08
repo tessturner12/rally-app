@@ -95,7 +95,7 @@ const FAQ = [
   },
   {
     q: "How long does a search take?",
-    a: "Usually 10–20 seconds. We're checking real journey times across dozens of candidate stations, so it takes a moment, but you'll see the results as soon as they're ready.",
+    a: "Usually well under 10 seconds. We're checking real journey times across dozens of candidate stations, so it takes a moment, but you'll see the results as soon as they're ready.",
   },
   {
     q: "How accurate are the journey times?",
@@ -135,7 +135,7 @@ export default function Home() {
   return (
     <main className="flex flex-col">
       {/* Hero — the first thing someone sees. One clear action. */}
-      <section className="flex flex-col items-center gap-6 px-6 py-16 text-center">
+      <section className="flex flex-col items-center gap-6 px-6 py-12 text-center">
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}

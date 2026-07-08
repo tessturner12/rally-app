@@ -172,8 +172,9 @@ export default function StationCard({
               <RoutePreview legs={journey.legs} />
             </div>
 
-            {/* Journey legs on the left, decorative map + Show route on the right */}
-            <div className="mt-2 flex gap-3">
+            {/* Mobile: route legs stacked full-width, map + Show route below.
+                Desktop (md+): legs on the left, map + Show route on the right. */}
+            <div className="mt-2 flex flex-col gap-3 md:flex-row">
               <ul className="flex flex-1 flex-col gap-1.5">
                 {journey.legs.map((leg, legIndex) => {
                   const colour = colourForLine(leg.lineName, leg.mode);
@@ -196,7 +197,7 @@ export default function StationCard({
 
               {/* Decorative map + Show route button */}
               <div
-                className="flex shrink-0 flex-col items-center gap-2"
+                className="flex shrink-0 flex-col items-center gap-2 self-center md:self-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 <TubeMapDecoration />

@@ -237,7 +237,7 @@ export default function SessionPage() {
           Comparing journey times across London...
         </p>
         <p className="text-sm text-zinc-500">
-          This can take up to 15 seconds - we&apos;re checking real public
+          This can take up to 10 seconds - we&apos;re checking real public
           transport times, not just guessing.
         </p>
       </main>
