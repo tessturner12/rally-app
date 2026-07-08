@@ -179,13 +179,13 @@ type JourneyPair = {
 }
 
 // TfL's API gets overwhelmed if we fire too many requests at once - with up to
-// 6 people checked against ~30 candidate stations, that's up to 180 journey
+// 6 people checked against ~55 candidate stations, that's up to 330 journey
 // lookups for a single search. This runs them through a queue that only lets
 // a limited number run at the same time, so the rest wait their turn instead
-// of all firing together. 20 (up from an original 10) roughly halves the wait
-// for a typical search while still leaving plenty of headroom - any 429s that
-// causes are already absorbed by the retry logic above.
-const MAX_CONCURRENT_TFL_REQUESTS = 20
+// of all firing together. 40 (up from 20, up from an original 10) keeps pace
+// with the growing candidate list - any 429s that causes are already
+// absorbed by the retry logic above.
+const MAX_CONCURRENT_TFL_REQUESTS = 40
 
 export async function getJourneys(
   pairs: JourneyPair[],

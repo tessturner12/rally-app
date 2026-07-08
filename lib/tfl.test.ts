@@ -223,7 +223,7 @@ describe('getJourneys', () => {
     expect(calledUrl).toContain('timeIs=Arriving')
   })
 
-  test('never runs more than 20 journey lookups at the same time', async () => {
+  test('never runs more than 40 journey lookups at the same time', async () => {
     let inFlight = 0
     let maxInFlight = 0
     const fetchMock = vi.fn().mockImplementation(async () => {
@@ -235,7 +235,7 @@ describe('getJourneys', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const pairs = Array.from({ length: 45 }, () => ({
+    const pairs = Array.from({ length: 90 }, () => ({
       fromLat: 51.5,
       fromLng: -0.1,
       toLat: 51.6,
@@ -244,6 +244,9 @@ describe('getJourneys', () => {
 
     await getJourneys(pairs)
 
-    expect(maxInFlight).toBeLessThanOrEqual(20)
+    // Also asserts we actually reach past the old 20-concurrent ceiling,
+    // not just that we stay under the new one.
+    expect(maxInFlight).toBeGreaterThan(20)
+    expect(maxInFlight).toBeLessThanOrEqual(40)
   })
 })

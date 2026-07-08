@@ -33,7 +33,12 @@ export default function SessionPage() {
 
   // Load the session once when the page opens - this covers both a fresh
   // session straight from the Home screen, and someone reopening a share
-  // link who needs to see locations already added by someone else.
+  // link who needs to see locations already added by someone else. As
+  // soon as the session arrives, this also seeds enough empty rows to
+  // give someone a head start - 2 by default, or fewer if the session is
+  // already close to the 6-person cap. Both updates happen together here
+  // (rather than in a second effect that reacts to `session` changing) so
+  // there's only ever one extra render once the data is back, not two.
   useEffect(() => {
     fetch(`/api/session/${id}`)
       .then((response) => {
@@ -45,36 +50,23 @@ export default function SessionPage() {
       })
       .then((data) => {
         if (data) {
-          setSession(data as Session);
+          const loadedSession = data as Session;
+          setSession(loadedSession);
+          const availableSlots = Math.max(MAX_LOCATIONS - loadedSession.locations.length, 0);
+          const initialRowCount = Math.min(DEFAULT_NEW_ROWS, availableSlots);
+          setRows(
+            Array.from({ length: initialRowCount }, () => ({
+              key: crypto.randomUUID(),
+              name: "",
+              input: "",
+            }))
+          );
         }
       })
       .catch(() => {
         setNotFound(true);
       });
   }, [id]);
-
-  // Once the session has loaded, seed enough empty rows to give someone
-  // a head start - 2 by default, or fewer if the session is already close
-  // to the 6-person cap. This only runs once (it bails out if rows already
-  // exist), so it doesn't re-seed rows that have since been filled in or
-  // saved.
-  useEffect(() => {
-    if (!session) {
-      return;
-    }
-    setRows((current) => {
-      if (current.length > 0) {
-        return current;
-      }
-      const availableSlots = Math.max(MAX_LOCATIONS - session.locations.length, 0);
-      const initialRowCount = Math.min(DEFAULT_NEW_ROWS, availableSlots);
-      return Array.from({ length: initialRowCount }, () => ({
-        key: crypto.randomUUID(),
-        name: "",
-        input: "",
-      }));
-    });
-  }, [session]);
 
   async function handleRemoveLocation(index: number) {
     // Removal is immediate - no "are you sure" step - so this fires the

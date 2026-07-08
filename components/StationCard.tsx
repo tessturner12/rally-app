@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { colourForLine } from "@/lib/lineColours";
 import type { RankedStation } from "@/lib/algorithm";
-import type { Venue } from "@/lib/venues";
+import { searchTermForFilter, type Venue } from "@/lib/venues";
 import PersonJourneyMap from "./PersonJourneyMap";
 
 type StationCardProps = {
@@ -93,11 +93,13 @@ export default function StationCard({
   const [venueFilter, setVenueFilter] = useState<string>(occasion ?? "all");
   const [mapForPersonIndex, setMapForPersonIndex] = useState<number | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [brokenPhotoIndices, setBrokenPhotoIndices] = useState<Set<number>>(new Set());
 
   async function handleFindVenues(filter = venueFilter) {
     setIsLoadingVenues(true);
     setVenuesError(null);
     setVenues(null);
+    setBrokenPhotoIndices(new Set());
     try {
       const forParam = filter !== "all" ? `&for=${filter}` : "";
       const response = await fetch(`/api/venues?lat=${station.lat}&lng=${station.lng}${forParam}`);
@@ -128,6 +130,29 @@ export default function StationCard({
       return;
     }
     handleFindVenues();
+  }
+
+  // Opens Google Maps in a new tab, searching for the currently selected
+  // venue type (food/coffee/drinks/park) near this station - lets someone
+  // browse Google's own listings directly, not just what we've fetched.
+  function handleSearchGoogleMaps() {
+    const term = searchTermForFilter(venueFilter);
+    const query = `${term} near ${station.lat},${station.lng}`;
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
+  // Opens this exact place in Google Maps, using its place_id so it lands
+  // on the specific venue rather than a generic text search.
+  function handleOpenVenue(venue: Venue) {
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.name)}&query_place_id=${encodeURIComponent(venue.placeId)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   }
 
   async function handleShare() {
@@ -236,6 +261,16 @@ export default function StationCard({
           {isLoadingVenues ? "Loading..." : venues !== null ? "Hide Nearby Venues" : "Find Nearby Venues"}
         </button>
 
+        {/* Always available - opens Google Maps directly, no need to have
+            fetched our own venue list first. */}
+        <button
+          type="button"
+          onClick={handleSearchGoogleMaps}
+          className="mt-2 w-full cursor-pointer rounded-lg border border-[#192841] px-4 py-2 text-sm font-medium text-[#192841] transition-colors hover:bg-[#e9edf5]"
+        >
+          Search in Google Maps
+        </button>
+
         {/* Filter buttons — only visible once venues have been fetched */}
         {venues !== null && (
           <div className="mt-2 flex flex-wrap gap-2">
@@ -262,13 +297,42 @@ export default function StationCard({
       {venues && venues.length > 0 && (
         <ul className="flex flex-col gap-2">
           {venues.map((venue, index) => (
-            <li key={index} className="rounded-lg border border-zinc-200 px-4 py-3">
-              <p className="font-medium text-zinc-800">{venue.name}</p>
-              <p className="text-sm text-zinc-500">
-                {venue.type} ·{" "}
-                {venue.rating > 0 ? `${venue.rating}★ · ` : ""}
-                {venue.address}
-              </p>
+            <li
+              key={index}
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenVenue(venue);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  handleOpenVenue(venue);
+                }
+              }}
+              className="flex cursor-pointer items-center gap-3 rounded-lg border border-zinc-200 px-4 py-3 transition-colors hover:border-[#192841] hover:bg-[#e9edf5]"
+            >
+              {venue.photoReference && !brokenPhotoIndices.has(index) && (
+                <img
+                  src={`/api/venues/photo?ref=${encodeURIComponent(venue.photoReference)}`}
+                  alt={`Photo of ${venue.name}`}
+                  className="h-14 w-14 shrink-0 rounded-md object-cover"
+                  onError={() =>
+                    setBrokenPhotoIndices((prev) => new Set(prev).add(index))
+                  }
+                />
+              )}
+              <div className="min-w-0">
+                <p className="font-medium text-zinc-800">{venue.name}</p>
+                <p className="text-sm text-zinc-500">
+                  {venue.type} ·{" "}
+                  {venue.rating > 0
+                    ? `${venue.rating}★${venue.reviewCount > 0 ? ` (${venue.reviewCount})` : ""} · `
+                    : ""}
+                  {venue.address}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
