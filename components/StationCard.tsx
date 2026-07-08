@@ -119,11 +119,22 @@ export default function StationCard({
     handleFindVenues(value);
   }
 
+  // The button doubles as an open/close toggle: if venues are already
+  // showing, clicking it again just hides them instead of re-fetching.
+  function handleToggleVenues() {
+    if (venues !== null) {
+      setVenues(null);
+      setVenuesError(null);
+      return;
+    }
+    handleFindVenues();
+  }
+
   async function handleShare() {
     const url = window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Here's where we should meet — Rally", url });
+        await navigator.share({ title: "Here's where we should meet · Rally", url });
       } catch {
         // dismissed
       }
@@ -217,11 +228,11 @@ export default function StationCard({
       <div onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
-          onClick={() => handleFindVenues()}
+          onClick={handleToggleVenues}
           disabled={isLoadingVenues}
-          className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:bg-emerald-300"
+          className="w-full cursor-pointer rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-300"
         >
-          {isLoadingVenues ? "Loading..." : "Find Nearby Venues"}
+          {isLoadingVenues ? "Loading..." : venues !== null ? "Hide Nearby Venues" : "Find Nearby Venues"}
         </button>
 
         {/* Filter buttons — only visible once venues have been fetched */}
@@ -265,7 +276,7 @@ export default function StationCard({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); handleShare(); }}
-        className="w-full rounded-full border border-[#192841] px-4 py-2.5 text-sm font-medium text-[#192841] hover:bg-[#e9edf5]"
+        className="w-full cursor-pointer rounded-full border border-[#192841] px-4 py-2.5 text-sm font-medium text-[#192841] transition-colors hover:bg-[#e9edf5]"
       >
         {shareCopied ? "Link copied!" : "Share these results"}
       </button>

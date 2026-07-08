@@ -104,9 +104,9 @@ export default function TimePreferenceToggle({
             type="button"
             disabled={isSaving}
             onClick={() => handleModeChange(value)}
-            className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 cursor-pointer rounded-full px-3 py-2 text-sm font-medium transition-colors ${
               mode === value
-                ? "bg-zinc-900 text-white"
+                ? "bg-[#192841] text-white"
                 : "border border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
             }`}
           >
@@ -135,7 +135,7 @@ export default function TimePreferenceToggle({
           type="button"
           onClick={handleSet}
           disabled={isSaving}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:bg-zinc-400"
+          className="w-full cursor-pointer rounded-lg bg-[#192841] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0f1a2b] disabled:cursor-not-allowed disabled:bg-zinc-400"
         >
           {timePreference ? "Update" : "Set time"}
         </button>

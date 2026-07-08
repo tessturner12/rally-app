@@ -252,11 +252,24 @@ export default function SessionPage() {
 
   return (
     <main className="flex flex-1 flex-col gap-8 px-6 py-10">
-      <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-2xl font-bold text-[#192841]">Rally</h1>
-        <p className="text-sm text-zinc-600">
-          Add where everyone&apos;s coming from ({savedCount}/{MAX_LOCATIONS})
-        </p>
+      <div className="flex flex-col gap-4">
+        <Link
+          href="/"
+          className="flex w-fit items-center gap-1 text-sm font-semibold text-[#192841] transition-colors hover:text-[#0f1a2b]"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9.5L12 3l9 6.5" />
+            <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />
+          </svg>
+          Home
+        </Link>
+
+        <div className="flex flex-col gap-1 text-center">
+          <h1 className="text-2xl font-bold text-[#192841]">Rally</h1>
+          <p className="text-sm text-zinc-600">
+            Add where everyone&apos;s coming from ({savedCount}/{MAX_LOCATIONS})
+          </p>
+        </div>
       </div>
 
       {savedCount > 0 && (

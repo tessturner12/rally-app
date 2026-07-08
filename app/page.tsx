@@ -17,7 +17,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Get the fairest meeting point",
-    body: "The station where nobody's commute is unfairly long. Not the geographic middle — the genuinely fair spot.",
+    body: "The station where nobody's commute is unfairly long. Not the geographic middle: the genuinely fair spot.",
   },
   {
     title: "See your exact route",
@@ -25,7 +25,11 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Find somewhere to go",
-    body: "Each suggested station comes with nearby restaurants, cafés, bars, and parks — filter by what you're in the mood for.",
+    body: "Each suggested station comes with nearby restaurants, cafés, bars, and parks. Filter by what you're in the mood for.",
+  },
+  {
+    title: "Share it with your friends",
+    body: "Tap \"Share these results\" to send your friends the winning station, everyone's journey times, and nearby spots to go.",
   },
 ];
 
@@ -71,7 +75,7 @@ const EXAMPLE_PEOPLE = [
 const FAQ = [
   {
     q: "How is this different from just finding the map midpoint?",
-    a: "Most tools find the geographic centre of everyone's locations — but London's tube network doesn't care about geography. A station that's physically in the middle can still be a 45-minute journey from one end of the group. Rally uses real TfL journey times, so the result is actually fair.",
+    a: "Most tools find the geographic centre of everyone's locations, but London's tube network doesn't care about geography. A station that's physically in the middle can still be a 45-minute journey from one end of the group. Rally uses real TfL journey times, so the result is actually fair.",
   },
   {
     q: "How many people can use it?",
@@ -79,7 +83,7 @@ const FAQ = [
   },
   {
     q: "Do I need to create an account?",
-    a: "No. Rally works instantly — no sign-up, no login.",
+    a: "No. Rally works instantly: no sign-up, no login.",
   },
   {
     q: "Is it free?",
@@ -91,15 +95,15 @@ const FAQ = [
   },
   {
     q: "How long does a search take?",
-    a: "Usually 10–20 seconds. We're checking real journey times across dozens of candidate stations, so it takes a moment — but you'll see the results as soon as they're ready.",
+    a: "Usually 10–20 seconds. We're checking real journey times across dozens of candidate stations, so it takes a moment, but you'll see the results as soon as they're ready.",
   },
   {
     q: "How accurate are the journey times?",
-    a: "They come directly from the TfL Journey Planner API — the same data source as the official TfL app.",
+    a: "They come directly from the TfL Journey Planner API, the same data source as the official TfL app.",
   },
   {
     q: "Can I share the session with my group?",
-    a: "Yes — every Rally session has a share link. Copy it from the session screen and send it to your group. Anyone with the link can open the same session, see what's already been added, and add their own starting point.",
+    a: "Yes, every Rally session has a share link. Copy it from the session screen and send it to your group. Anyone with the link can open the same session, see what's already been added, and add their own starting point.",
   },
 ];
 
@@ -132,17 +136,21 @@ export default function Home() {
     <main className="flex flex-col">
       {/* Hero — the first thing someone sees. One clear action. */}
       <section className="flex flex-col items-center gap-6 px-6 py-16 text-center">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-5xl font-bold tracking-tight text-[#192841]">
-            Rally
-          </h1>
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/rally-logo.svg" alt="" className="h-32 w-32" />
+            <span className="font-[family-name:var(--font-poppins)] text-6xl font-bold uppercase tracking-wide text-[#192841]">
+              Rally
+            </span>
+          </div>
           <p className="text-lg font-medium text-zinc-500">Find the fair spot</p>
         </div>
-        <p className="max-w-sm text-base text-zinc-600">
+        <h1 className="max-w-sm text-base text-zinc-600">
           No more arguing about where to meet. Rally finds the London station
-          that&apos;s genuinely fair for everyone — based on real tube times, not
-          just the map midpoint.
-        </p>
+          that&apos;s fair for everyone based on live tube times, not just the
+          midpoint.
+        </h1>
         <button
           type="button"
           onClick={handleStart}

@@ -45,7 +45,7 @@ export default function ResultsPage() {
     const url = window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Here's where we should meet — Rally", url });
+        await navigator.share({ title: "Here's where we should meet · Rally", url });
       } catch {
         // User dismissed the share sheet — not an error worth surfacing
       }
@@ -96,17 +96,44 @@ export default function ResultsPage() {
   const { rankedStations } = session.results;
   const selectedStation = rankedStations[selectedIndex] ?? rankedStations[0];
 
+  // Turns the group's names into a readable list for the headline, e.g.
+  // "Tess, Sam, and Jo" — falls back to "Person 1" style labels for anyone
+  // who didn't type in a name, matching the fallback used on the cards below.
+  const groupNames = session.locations.map(
+    (location, index) => location.name || `Person ${index + 1}`
+  );
+  const namesText =
+    groupNames.length <= 1
+      ? groupNames[0]
+      : groupNames.length === 2
+        ? `${groupNames[0]} and ${groupNames[1]}`
+        : `${groupNames.slice(0, -1).join(", ")}, and ${groupNames[groupNames.length - 1]}`;
+
   return (
     <main className="flex flex-1 flex-col gap-8 px-6 py-10">
-      <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-bold text-[#192841]">Suggested Meeting Points</h1>
-        <button
-          type="button"
-          onClick={handleShare}
-          className="mx-auto rounded-full border border-[#192841] px-4 py-1.5 text-sm font-medium text-[#192841]"
+      <div className="flex flex-col gap-4">
+        {/* Back to the session screen (add/edit locations) - not the home page */}
+        <Link
+          href={`/session/${id}`}
+          className="flex w-fit items-center gap-1 text-sm font-semibold text-[#192841] transition-colors hover:text-[#0f1a2b]"
         >
-          {linkCopied ? "Link copied!" : "Share these results"}
-        </button>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Back
+        </Link>
+
+        <div className="flex flex-col gap-2 text-center">
+          <h1 className="text-2xl font-bold text-[#192841]">Suggested Meeting Points</h1>
+          <p className="text-base text-zinc-600">For {namesText}</p>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="mx-auto cursor-pointer rounded-full border border-[#192841] px-4 py-1.5 text-sm font-medium text-[#192841] transition-colors hover:bg-[#e9edf5]"
+          >
+            {linkCopied ? "Link copied!" : "Share these results"}
+          </button>
+        </div>
       </div>
 
       <MeetingAreaMap
@@ -130,8 +157,8 @@ export default function ResultsPage() {
       </div>
 
       <Link
-        href="/"
-        className="w-full rounded-full border border-zinc-300 px-8 py-4 text-center text-lg font-semibold text-zinc-800"
+        href={`/session/${id}`}
+        className="w-full rounded-full border border-zinc-300 px-8 py-4 text-center text-lg font-semibold text-zinc-800 transition-colors hover:border-zinc-400 hover:bg-zinc-50"
       >
         Start over
       </Link>
