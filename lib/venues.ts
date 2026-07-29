@@ -38,6 +38,61 @@ type PlacesNearbySearchResponse = {
 export const ALL_VENUE_TYPES = ['restaurant', 'cafe', 'bar'] as const
 const CACHE_TTL_SECONDS = 12 * 60 * 60
 
+// Google tags big supermarkets/superstores with an extra type like "cafe" or
+// "restaurant" whenever they have an in-store café or food hall (an Asda
+// Superstore, an M&S Foodhall) - technically a match, but not somewhere
+// anyone would suggest meeting up. Filtered out regardless of which
+// category search surfaced it under.
+const NON_MEETUP_TYPES = [
+  'supermarket',
+  'grocery_or_supermarket',
+  'department_store',
+  'shopping_mall',
+  'convenience_store',
+  'gas_station',
+]
+
+// Big fast-food chains aren't the kind of sit-down spot Rally should
+// suggest - Google doesn't tag these any differently from other
+// restaurants, so they're filtered out by name instead.
+const FAST_FOOD_NAMES = [
+  "mcdonald's",
+  'mcdonalds',
+  'kfc',
+  "domino's",
+  'dominos',
+  'burger king',
+  'subway',
+  'pizza hut',
+  'taco bell',
+  "wendy's",
+  'wendys',
+  "papa john's",
+  'papa johns',
+]
+
+// Retail/business/industrial "parks" turn up under a park search purely
+// because they share the word "park" in their name - they're commercial
+// estates, not green space, so they're filtered out by name too.
+const NON_PARK_NAME_PATTERNS = [
+  'retail park',
+  'business park',
+  'industrial park',
+  'trading estate',
+  'science park',
+  'leisure park',
+]
+
+function isMeetupWorthy(result: { name: string; types?: string[] }, type: string): boolean {
+  if (result.types?.some((t) => NON_MEETUP_TYPES.includes(t))) return false
+
+  const name = result.name.toLowerCase()
+  if (FAST_FOOD_NAMES.some((chain) => name.includes(chain))) return false
+  if (type === 'park' && NON_PARK_NAME_PATTERNS.some((pattern) => name.includes(pattern))) return false
+
+  return true
+}
+
 // Search term used by the "Search in Google Maps" button, based on
 // whichever venue filter is currently selected. Falls back to "drinks"
 // when nothing's selected (the "all" filter) or for any unrecognised value.
@@ -104,6 +159,7 @@ async function fetchVenuesForType(
     // a well-known hotel bar) won't carry the "lodging" type, so this only
     // filters out the hotel's own entry, not genuinely separate venues.
     .filter((result) => !result.types?.includes('lodging'))
+    .filter((result) => isMeetupWorthy(result, type))
     .map((result) => ({
       name: result.name,
       type,

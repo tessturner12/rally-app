@@ -87,4 +87,19 @@ export const CANDIDATE_STATIONS: Candidate[] = [
   { id: 'HUBWHC', name: 'Walthamstow Central', lat: 51.582948, lng: -0.019842, zone: '3' },
   { id: 'HUBCAW', name: 'Canary Wharf', lat: 51.503734, lng: -0.019121, zone: '2' },
   { id: '940GZZLUWKN', name: 'West Kensington', lat: 51.490459, lng: -0.206636, zone: '2' },
+
+  // Added 2026-07-29, based on online research into where people actually meet
+  // up in London today (Time Out / Design My Night style "best bars and
+  // neighbourhoods" roundups). Same sourcing rule as always: coordinates and
+  // zones pulled live from TfL's StopPoint Search / StopPoint detail APIs.
+  { id: '940GZZLUPCC', name: 'Piccadilly Circus', lat: 51.51005, lng: -0.133798, zone: '1' },
+  { id: '940GZZLULSQ', name: 'Leicester Square', lat: 51.511386, lng: -0.128426, zone: '1' },
+  { id: '940GZZLUCGN', name: 'Covent Garden', lat: 51.513093, lng: -0.124436, zone: '1' },
+  { id: '940GZZBPSUST', name: 'Battersea Power Station', lat: 51.479932, lng: -0.142142, zone: '1' },
+  { id: '940GZZLUBLG', name: 'Bethnal Green', lat: 51.527222, lng: -0.055506, zone: '2' },
+  { id: '940GZZLUMED', name: 'Mile End', lat: 51.525122, lng: -0.03364, zone: '2' },
+  { id: '940GZZLUPYB', name: 'Putney Bridge', lat: 51.468262, lng: -0.208731, zone: '2' },
+  { id: '940GZZLUWOG', name: 'Wood Green', lat: 51.597479, lng: -0.109886, zone: '3' },
+  { id: 'HUBWIM', name: 'Wimbledon', lat: 51.421505, lng: -0.206444, zone: '3' },
+  { id: 'HUBRMD', name: 'Richmond', lat: 51.463152, lng: -0.301448, zone: '4' },
 ]

@@ -156,6 +156,95 @@ describe('getNearbyVenues', () => {
     expect(names).toContain('The Connaught Bar')
   })
 
+  test('excludes a supermarket/superstore even when it also carries the requested type (e.g. an Asda café)', async () => {
+    redisMock.get.mockResolvedValue(null)
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        results: [
+          placeResult({
+            name: 'Asda Superstore',
+            types: ['cafe', 'supermarket', 'grocery_or_supermarket', 'point_of_interest'],
+          }),
+          placeResult({ name: 'Look Mum No Hands', types: ['cafe', 'point_of_interest', 'establishment'] }),
+        ],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const venues = await getNearbyVenues(51.5, -0.1, 500, ['cafe'])
+
+    const names = venues.map((v) => v.name)
+    expect(names).not.toContain('Asda Superstore')
+    expect(names).toContain('Look Mum No Hands')
+  })
+
+  test('excludes an M&S Foodhall tagged as a restaurant', async () => {
+    redisMock.get.mockResolvedValue(null)
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        results: [
+          placeResult({
+            name: 'M&S Foodhall',
+            types: ['restaurant', 'department_store', 'point_of_interest'],
+          }),
+          placeResult({ name: 'Dishoom', types: ['restaurant', 'point_of_interest', 'establishment'] }),
+        ],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const venues = await getNearbyVenues(51.5, -0.1, 500, ['restaurant'])
+
+    const names = venues.map((v) => v.name)
+    expect(names).not.toContain('M&S Foodhall')
+    expect(names).toContain('Dishoom')
+  })
+
+  test.each(["McDonald's", 'KFC', "Domino's Pizza", 'Burger King', 'Subway'])(
+    'excludes the fast-food chain %s by name',
+    async (chainName) => {
+      redisMock.get.mockResolvedValue(null)
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          results: [
+            placeResult({ name: chainName, types: ['restaurant', 'point_of_interest', 'establishment'] }),
+            placeResult({ name: 'Honest Burgers', types: ['restaurant', 'point_of_interest', 'establishment'] }),
+          ],
+        }),
+      })
+      vi.stubGlobal('fetch', fetchMock)
+
+      const venues = await getNearbyVenues(51.5, -0.1, 500, ['restaurant'])
+
+      const names = venues.map((v) => v.name)
+      expect(names).not.toContain(chainName)
+      expect(names).toContain('Honest Burgers')
+    }
+  )
+
+  test('excludes a retail/business park by name when searching for parks, but keeps a genuine park', async () => {
+    redisMock.get.mockResolvedValue(null)
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        results: [
+          placeResult({ name: 'Croydon Retail Park', types: ['park', 'point_of_interest'] }),
+          placeResult({ name: 'Victoria Park', types: ['park', 'point_of_interest', 'establishment'] }),
+        ],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const venues = await getNearbyVenues(51.5, -0.1, 500, ['park'])
+
+    const names = venues.map((v) => v.name)
+    expect(names).not.toContain('Croydon Retail Park')
+    expect(names).toContain('Victoria Park')
+  })
+
   test('skips a result with no geometry/location rather than crashing', async () => {
     redisMock.get.mockResolvedValue(null)
     const fetchMock = vi.fn().mockResolvedValue({
