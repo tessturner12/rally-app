@@ -3,7 +3,7 @@
 Status snapshot for picking up work on any machine. Update this at the end of each session.
 
 ## Current status
-UI polish pass complete. Brand colour is now `#192841` (navy) throughout. App always renders in light mode regardless of device setting. Homepage example is now a phone-frame mockup (see log below) rather than the flat card. Parks/walks added as a fifth venue option across the occasion picker, venue filter buttons, and venues API. Venue results now show real Google Places photos and a "Search in Google Maps" / per-venue "open in Maps" flow, hotel listings are filtered out of venue results, and the candidate station list has grown from 30 to 65 (see log below). Everything below is committed and live on Vercel.
+Candidate station list expanded from 55 to 65 (10 more added based on research into where people actually meet up in London today), and the "Share these results" button now has a small icon. Venue suggestions are now sense-checked: supermarkets/superstores (Asda, M&S Foodhall), well-known fast-food chains, and fake "retail park"-style results under the parks filter are all excluded, since real testing on localhost surfaced all three showing up under sensible-looking categories. All of this is committed and pushed to `main` on GitHub (`tessturner12/rally-app`) — not yet confirmed live on Vercel production this session, so worth checking `joinrally.place` reflects it before assuming it's deployed.
 
 **Housekeeping:** `.claude/worktrees/journey-detail-and-ranking/` is a leftover git worktree from an earlier session — harmless but unused. Added `.claude/` to `.gitignore` (2026-07-08) so it can't be accidentally committed; the folder itself is still sitting on disk and safe to delete whenever.
 
