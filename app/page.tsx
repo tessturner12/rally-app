@@ -147,9 +147,8 @@ export default function Home() {
           <p className="text-lg font-medium text-zinc-500">Find the fair spot</p>
         </div>
         <h1 className="max-w-sm text-base text-zinc-600">
-          No more arguing about where to meet. Rally finds the London station
-          that&apos;s fair for everyone based on live tube times, not just the
-          midpoint.
+          Rally finds the London station that&apos;s fair for everyone based
+          on live tube times, not just the midpoint.
         </h1>
         <button
           type="button"

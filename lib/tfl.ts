@@ -179,13 +179,20 @@ type JourneyPair = {
 }
 
 // TfL's API gets overwhelmed if we fire too many requests at once - with up to
-// 6 people checked against ~55 candidate stations, that's up to 330 journey
+// 6 people checked against ~65 candidate stations, that's up to 390 journey
 // lookups for a single search. This runs them through a queue that only lets
 // a limited number run at the same time, so the rest wait their turn instead
-// of all firing together. 40 (up from 20, up from an original 10) keeps pace
-// with the growing candidate list - any 429s that causes are already
-// absorbed by the retry logic above.
-const MAX_CONCURRENT_TFL_REQUESTS = 40
+// of all firing together.
+//
+// A direct test against TfL (390 calls, no app involved) found the real
+// bottleneck isn't rate-limiting - it's TfL's own per-call latency (roughly
+// 1s typical, but a real tail up to 3-5s). At concurrency 40 that tail has to
+// be paid out ~10 times over (390 calls / 40 at a time), which is what was
+// making a full 6-person search take 15-20+ seconds. 80 (up from 40, up from
+// 20, up from an original 10) roughly halves that to ~5 waves. TfL showed
+// zero 429s at 40 concurrent in that test, so this is a reasonable next step
+// to try - the retry logic above absorbs any 429s it does cause.
+const MAX_CONCURRENT_TFL_REQUESTS = 80
 
 export async function getJourneys(
   pairs: JourneyPair[],

@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LocationsForm, { type DraftRow } from "@/components/LocationsForm";
 import TimePreferenceToggle from "@/components/TimePreferenceToggle";
+import CalculatingScreen from "@/components/CalculatingScreen";
 import type { Session } from "@/lib/session";
 
 const MAX_LOCATIONS = 6;
@@ -223,16 +224,15 @@ export default function SessionPage() {
   }
 
   if (isCalculating) {
+    // Names of everyone who's been added so far, so the loading screen can
+    // talk about real people ("Checking Sam's routes...") instead of staying
+    // generic the whole time it's working.
+    const namesForProgress = session.locations
+      .map((location) => location.name)
+      .filter((name) => name.trim().length > 0);
+
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
-        <p className="text-lg font-medium text-zinc-800">
-          Comparing journey times across London...
-        </p>
-        <p className="text-sm text-zinc-500">
-          This can take up to 10 seconds - we&apos;re checking real public
-          transport times, not just guessing.
-        </p>
-      </main>
+      <CalculatingScreen names={namesForProgress} />
     );
   }
 
