@@ -184,15 +184,18 @@ type JourneyPair = {
 // a limited number run at the same time, so the rest wait their turn instead
 // of all firing together.
 //
-// A direct test against TfL (390 calls, no app involved) found the real
-// bottleneck isn't rate-limiting - it's TfL's own per-call latency (roughly
-// 1s typical, but a real tail up to 3-5s). At concurrency 40 that tail has to
-// be paid out ~10 times over (390 calls / 40 at a time), which is what was
-// making a full 6-person search take 15-20+ seconds. 80 (up from 40, up from
-// 20, up from an original 10) roughly halves that to ~5 waves. TfL showed
-// zero 429s at 40 concurrent in that test, so this is a reasonable next step
-// to try - the retry logic above absorbs any 429s it does cause.
-const MAX_CONCURRENT_TFL_REQUESTS = 80
+// This was tried at 80 (double this value) on the theory that TfL's own
+// per-call latency, not rate-limiting, was the bottleneck at 40 - and that
+// doubling concurrency would roughly halve the number of "waves" needed.
+// A small-scale test (130 calls) seemed to support that. It didn't hold up
+// at real scale: a direct 390-call test at concurrency 80 got zero 429s but
+// a p99 latency of 25+ seconds (vs ~5s at concurrency 40) - TfL's own
+// response times degrade sharply under heavier concurrent load from one
+// client, it just doesn't show up as a rejected request. Confirmed live: a
+// production search at 80 took 38.7s, worse than the ~16s it took at 40.
+// Back to 40 - it's a real ceiling on TfL's side, not just a number to tune
+// upward.
+const MAX_CONCURRENT_TFL_REQUESTS = 40
 
 export async function getJourneys(
   pairs: JourneyPair[],
